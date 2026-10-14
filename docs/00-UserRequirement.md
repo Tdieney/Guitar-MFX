@@ -3,7 +3,7 @@
 | Field | Value |
 |---|---|
 | Document status | Baseline requirements |
-| Revision | 0.5 |
+| Revision | 0.6 |
 | Date | 2026-10-14 |
 | Project type | Personal DIY electric-guitar multi-effects processor; learning and research project |
 | Primary user | Beginner to multi-effects processors and to audio electronics; experienced with PCB design, soldering, and 3D design |
@@ -97,10 +97,11 @@ The required USB channel map, bit depth, host operating systems, dry/re-amp chan
 
 | ID | Requirement | Priority |
 |---|---|---|
-| UR-PWR-001 | Operate from an external DC adapter feeding the Guitar-MFX main-board power tree; the baseline computer USB-C connection is for data, not main power. | Must |
+| UR-PWR-001 | Operate from an external 12 V DC adapter (barrel jack, about 3 A) feeding the main-board power tree; the computer USB-C connection is for data, not main power. Input type confirmed by the user on 2026-10-14. | Must |
 | UR-PWR-002 | Permit a USB data connection to a computer without back-powering either the Pi 5 or the host. | Must |
-| UR-PWR-003 | Provide controlled shutdown because the main processor runs Linux and uses writable storage. | Must |
+| UR-PWR-003 | Turn the unit on and off with a soft power button, as on the Quad Cortex: one press starts the unit; another press runs an orderly shutdown (mute, Linux shutdown, then power off). Confirmed by the user on 2026-10-14. | Must |
 | UR-PWR-004 | Battery operation is not currently required. | Not required |
+| UR-PWR-005 | Pulling the DC plug while the unit runs must not damage the unit, corrupt the system or saved presets, or cause a loud pop; changes not yet saved may be lost. No hold-up supply is provided to finish a Linux shutdown after power loss. Confirmed by the user on 2026-10-14. | Must |
 | UR-MEC-001 | The enclosure may be large enough for the Pi 5 SBC, the Guitar-MFX boards placed beside it, cooling, foot controls, robust connectors, and service access. | Must |
 | UR-MEC-002 | Design and fabricate three custom Guitar-MFX boards — an audio board and a main board connected to the Raspberry Pi 5 40-pin header by ribbon cable, and a front-panel board behind the display — replacing the commercial audio HAT in the final product. The boards are not constrained to the HAT form factor. Board count confirmed by the user on 2026-10-14. | Must |
 | UR-MEC-003 | The Pi 5 HDMI, USB-A, and Ethernet connectors may remain physically present but are not required as product-facing connections; Ethernet may be used during development. | Should |

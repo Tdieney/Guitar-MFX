@@ -1,6 +1,6 @@
 # Guitar-MFX System Architecture
 
-**Revision:** 0.6  
+**Revision:** 0.7  
 **Date:** 2026-10-14  
 **Status:** Proposed architecture; measured validation is recorded in [03-Measurements.md](03-Measurements.md)
 
@@ -249,13 +249,17 @@ External footswitch connectors require ESD protection, filtering, and a clearly 
 The output must default to muted in hardware. The safe-state sequence is:
 
 ```text
-OFF
-  -> UI_BOOT: ESP32-S3 starts; output remains muted
-  -> LINUX_BOOT: UI shows progress; heartbeat awaited
+OFF: only the push-button controller is powered
+  -> UI_BOOT: button press; ESP32-S3 starts; output remains muted; Pi 5 still unpowered
+  -> LINUX_BOOT: ESP32-S3 closes the Pi 5 load switch; UI shows progress; heartbeat awaited
   -> AUDIO_STARTING: codec and graph initialize; levels ramp from silence
   -> READY: output mute releases only after stable audio is confirmed
   -> FAULT: any lost heartbeat or audio failure immediately remutes output
-  -> SHUTDOWN: mute first, stop audio, sync storage, remove Pi power when safe
+  -> SHUTDOWN: button press; mute, UART shutdown command, Linux poweroff, wait for the
+     Pi 5 header 3.3 V to fall, open the Pi 5 load switch, display power-off sequence,
+     controller kill input turns the unit off
+  -> POWER_FAIL: 12 V input lost; hardware mutes and opens the Pi 5 load switch;
+     ESP32-S3 completes the display power-off sequence on hold-up energy
 ```
 
 Mute is implemented by two relays at the output jacks, after the output drivers, muted when unpowered and driven through one direct master-mute GPIO ([01-Hardware.md](01-Hardware.md) §5.5). This matters for crashes: when Linux hangs, the ALSA DMA engine typically keeps replaying the last audio buffer, producing a loud repeating buzz. The ESP32-S3 detects the lost heartbeat and closes the relays.
@@ -266,7 +270,7 @@ Display sequencing: the ESP32-S3 follows the panel's power-on order (VDD, DISP, 
 
 A normally-muted output is preferable to traditional guitar true bypass for headphones and full-range speakers: an unprocessed guitar signal would be very quiet and would omit the required amplifier/cabinet processing. There is no dedicated amplifier output and therefore no true-bypass path; all outputs default to silent.
 
-The ESP32-S3 should remain powered long enough to display shutdown progress and enforce mute. Abrupt removal of Pi 5 power should be avoided to protect preset and filesystem data.
+Normal shutdown is orderly ([01-Hardware.md](01-Hardware.md) §8.3). Abrupt power loss is tolerated rather than prevented: there is no hold-up for the Pi 5, Linux runs from a read-only root, and presets are written atomically (§9). A long press of the power button forces power off if the ESP32-S3 or the Pi 5 hangs. If the Pi 5 does not halt within the shutdown timeout, the ESP32-S3 removes its power anyway, which is treated like a power loss.
 
 ## 7. Real-Time Performance Architecture
 
@@ -341,7 +345,8 @@ The final choice follows measured boot time, repeated-write behavior, forced-pow
 
 For either medium:
 
-- Keep user presets and downloaded models in a separately backed-up data area.
+- Run the root filesystem read-only, with runtime writes kept in RAM (an overlay, as Raspberry Pi OS provides), so an unplanned power loss cannot corrupt the system. Raspberry Pi's resilient-filesystem whitepaper lists the page cache, in-flight writes, and SD card internal operations as the causes of power-loss corruption.
+- Keep user presets, PiPedal settings, downloaded models, and IRs on a separate writable data partition that is backed up. How PiPedal stores its data, and how to place it on that partition, is checked in Phase 1.
 - Write presets atomically so power loss cannot leave a partially written active preset.
 - Validate imported NAM and IR files before making them selectable.
 - Provide Wi-Fi transfer through PiPedal or the bridge service during setup, with an option to disable Wi-Fi during performance.
@@ -434,6 +439,9 @@ Consider an MCU audio front end only if the measured and owner-evaluated Pi 5 sy
 | Global analog PGA calibration; digital per-preset model level | Selected; not yet measured | Repeatable NAM drive level without PGA steps on preset change |
 | Main out L/MONO + R (6.35 mm) and headphone out (3.5 mm); guitar amplifier via main outputs with cabinet switched off manually | Selected 2026-10-14 | Follows common commercial multi-effects units; one stereo mix keeps the codec at 2 DAC channels |
 | Relays at jacks with direct master-mute GPIO; separate analog Master and Phones potentiometers | Selected; circuits not yet measured | Stops driver transients; safety path and volume both independent of the I/O expander and of Linux |
+| 12 V DC barrel-jack input, about 3 A | Selected by user 2026-10-14 | Common, inexpensive adapters; simple buck to the Pi 5 rail |
+| Soft power button with orderly shutdown; long press forces off | Selected by user 2026-10-14; circuit not yet designed | As on the Quad Cortex; Linux shuts down cleanly in normal use |
+| No hold-up for the Pi 5; read-only root, atomic preset writes, hardware power-fail mute | Selected by user 2026-10-14; not yet measured | Pulling the plug stays safe without supercapacitors |
 | PiPedal 2.x as host | Existing project decision; prototype validation required | Pedal-oriented host with LV2 and NAM A2 support |
 | 48 kHz fixed initial sample rate | Existing engineering decision; measurement gate remains | Quality/CPU/latency compromise and simpler system clocking |
 | Pisound plus HiFiBerry comparison | HiFiBerry DAC2 ADC Pro required (it carries the rev A codec pair); Pisound now an optional second reference | A measured reference for the exact chips used on the audio board |
@@ -458,6 +466,8 @@ Consider an MCU audio front end only if the measured and owner-evaluated Pi 5 sy
 | Guitar input impedance or level is wrong | Dull tone or incorrect capture response | High-Z buffer, switchable/calibrated gain, scope and analyzer tests |
 | Touch/UI load interferes with audio | Clicks or xruns | Separate ESP32-S3 UI, bounded status rates, and no audio over UART |
 | A board-to-board cable is unplugged or fails | Outputs unmute unexpectedly, or a board is back-powered through its signal lines | Mute-gate inputs pulled to the muted state on the audio board; no signal driven into an unpowered board; unplug tests during board bring-up |
+| SD card internal operations interrupted by sudden power loss | Corruption even with a read-only root | Orderly shutdown in normal use; high-endurance card; repeated plug-pull tests under V-STORAGE; NVMe option |
+| Hold-up too short for the display power-off sequence | Display stress or visible artefacts when the plug is pulled | Hardware mute and Pi 5 cut on power fail; backlight off first; hold-up measured under V-POWER |
 | Board placement or fan compromises analog noise/cooling | Noise, throttling, or xruns | Boards beside the Pi, analog zoning on one continuous ground plane, short ribbon, fan-state electrical/acoustic tests, and enclosed thermal stress test |
 | ESP32-S3 cannot drive the panel cleanly at ≥ 23 MHz DCLK | Flicker or drift; UI unusable | Display bring-up adapter and display gate before any other UI work; bounce buffer; no Wi-Fi or flash writes on the ESP32-S3; fallback STM32U5G9 |
 | ESP32-S3 GPIO budget is exhausted (30 of 31 used) | No pin for a late addition | I2C I/O expander for slow signals; SYNC mode without DE or encoder via expander as reserves |

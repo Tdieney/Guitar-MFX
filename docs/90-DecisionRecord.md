@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| Version | 0.6 |
+| Version | 0.7 |
 | Date | 2026-10-14 |
 | Status | Pre-hardware; project measurements have not yet been recorded |
 | Purpose | Authoritative rationale and evidence behind decisions kept in the numbered project documents |
@@ -384,6 +384,43 @@ The audio and main boards connect to the Pi 5 40-pin header by ribbon and sit be
 
 **Status:** Selected for rev A; measurement-gated.
 
+---
+
+### ADR-019 — 12 V input, soft power button, and power-loss strategy
+
+**Decision:**
+
+- **Input:** 12 V DC adapter, about 3 A, on a barrel jack.
+- **Power control:** soft power button, as on the Quad Cortex. A press starts the unit; another press runs an orderly shutdown supervised by the ESP32-S3: mute, Linux poweroff, wait for the Pi 5 header 3.3 V to fall, cut Pi 5 power, display power-off sequence, then the controller's kill input. A long press forces power off. A push-button on/off controller on the main board stays powered.
+- **Power loss:** no hold-up for the Pi 5. A power-fail comparator mutes the relays and cuts the Pi 5 in hardware; a few millifarads of hold-up let the ESP32-S3 finish the display power-off sequence. Linux runs from a read-only root; presets are written atomically on a separate data partition.
+
+**Market comparison (2026-10-14; vendor and community sources):**
+
+| Unit | How it turns off | Guidance |
+|---|---|---|
+| [MOD Dwarf](https://forum.mod.audio/t/dwarf-on-off-switch/6030) (Linux) | No power switch; unplug | MOD staff: unplugging does not damage the unit; leaving out the switch was a design decision. A user reports read-only or RAM-based system partitions ([community information](https://forum.mod.audio/t/power-disconnection-countermeasure-for-mod-dwarf/11523)). |
+| [Neural DSP Quad Cortex](https://neuraldsp.com/manual/quad-cortex) | Capacitive power button, then SHUT DOWN | "Disconnecting the power cable while the device is running is not recommended." |
+| [HeadRush Pedalboard](https://cdn.inmusicbrands.com/HeadRush/pedalboard/Pedalboard-Quickstart-Guide-v2_1_3.pdf) | Press and hold the power button | — |
+| [Kemper Profiler](https://www.kemper-amps.com/forum/thread/11201-probably-a-silly-question-power-down-kemper/) | On/Off control | Forum guidance: switch the unit off before the power strip so the outputs are driven to a safe level. |
+
+**Rationale:**
+
+- **12 V:** common, inexpensive adapters and a simple buck to the Pi 5 rail. USB-C PD needs a PD sink controller and gives the unit two USB-C ports; 9 V pedal supplies rarely provide 3 A.
+- **Soft button:** normal shutdowns are clean. Raspberry Pi's resilient-filesystem whitepaper names the page cache, in-flight writes, and SD card internal operations as power-loss corruption causes; a read-only root removes the first two, and an orderly shutdown also avoids the third in normal use. The relays already prevent pops, so pop control is not the reason.
+- **No Pi hold-up:** finishing a Linux shutdown after power loss needs roughly 10 s at about 10 W (about 100 J, estimate), i.e. on the order of 10 F of supercapacitors plus charge and boost circuits. A read-only root makes power loss tolerable instead.
+- **Hardware power-fail mute:** muting does not depend on firmware, and cutting the Pi 5 first saves hold-up energy for the display power-off sequence.
+
+**Alternatives considered:**
+
+- **Hard power switch, MOD style:** fewer parts and automatic start from a pedalboard power strip, but every power-off is a power loss and data safety rests entirely on the read-only root. Recommended in review for simplicity; not selected by the user.
+- **Hard switch plus soft button:** most parts; not selected.
+- **Supercapacitor hold-up for a full Linux shutdown:** cost and board area; not selected.
+- **USB-C PD or 9 V input:** see rationale; not selected.
+
+**Consequences:** the main board gains a push-button controller, Pi 5 load switch, ideal diode, hold-up capacitance, and power-fail comparator; the power-fail line is a further input to the audio-board mute gate; the ESP32-S3 handles Pi 5 power enable, Pi 3.3 V sense, button interrupt, power-off request, and power-fail flag through the I/O expander, with no new direct GPIO; the Pi image needs `POWER_OFF_ON_HALT=1`, `PSU_MAX_CURRENT`, a read-only root, and a data partition for PiPedal state; V-POWER and V-STORAGE gain power-loss rows.
+
+**Status:** Selected by the user 2026-10-14; not yet designed or measured.
+
 ## 4. External latency context
 
 These figures are not Guitar-MFX measurements. They illustrate why both numerical and perceptual comparisons matter.
@@ -427,13 +464,14 @@ If this misses the gate, an alternative such as a Xenomai/EVL dual-kernel or a p
 
 ## 7. Power, storage, and board implications
 
-- The proposed 12 V input uses a synchronous buck for the Pi 5 rail; a multi-ampere 12 V-to-5 V linear regulator is not acceptable.
+- The 12 V input (ADR-019) uses a synchronous buck for the Pi 5 rail; a multi-ampere 12 V-to-5 V linear regulator is not acceptable.
+- Power control and power loss follow ADR-019: soft power button, orderly shutdown, no Pi hold-up, read-only root, hardware power-fail mute.
 - Low-noise LDOs remain candidates only for controlled low-current analog/reference rails.
 - Phase 0 boots from high-endurance microSD.
 - Raspberry Pi **vendor documentation** supports Pi 5 NVMe boot through the PCIe FFC connection. NVMe remains optional because adding PCIe/M.2 hardware materially increases layout, signal-integrity, power, cooling, and mechanical scope. See [Raspberry Pi NVMe documentation](https://www.raspberrypi.com/documentation/computers/raspberry-pi.html#nvme-ssd-boot).
 - Atomic preset writes, a known-good preset, recoverable images, and forced-power-loss testing apply to either storage choice.
 - Each Guitar-MFX first article is expected to require at least one respin. Board bring-up starts with unpopulated/bare-board checks and current-limited rail verification before Pi 5 is installed.
-- Audio-board rails are made by local low-noise LDOs from a pre-regulated rail supplied by the main board (two-stage regulation).
+- Audio-board rails are made by local low-noise LDOs (about ±12 V for op-amps, 3.3 V for the codec; proposed) from a pre-regulated dual rail of about ±13 V supplied by the main board (two-stage regulation).
 - The display adds a 3.3 V load shared with the ESP32-S3 and a backlight boost driver of about 1 W.
 
 ## 8. Open decisions
@@ -444,6 +482,9 @@ If this misses the gate, an alternative such as a Xenomai/EVL dual-kernel or a p
 - Whether the ESP32-S3 passes the display gate at DCLK ≥ 23 MHz, or the STM32U5G9 fallback is needed.
 - Physical interconnect between the three boards and the Pi 5 header: which cable carries which signals, connector types, and pinouts.
 - Whether the display gate runs on the bring-up adapter before front-panel rev A is drawn, or on front-panel rev A directly.
+- Whether the unit turns on by itself when 12 V is applied (useful with a pedalboard power strip).
+- Push-button controller part, hold-up capacitance, and shutdown timeout (sized at schematic design, measured under V-POWER).
+- Final analog rail voltages (about ±12 V proposed).
 - Native Pi 5 gadget or dedicated USB audio bridge after Phase 3.
 - Exact panel USB-C CC/VBUS isolation implementation, if native gadget wins.
 - Final microSD or NVMe boot/storage medium.
@@ -512,6 +553,17 @@ If this misses the gate, an alternative such as a Xenomai/EVL dual-kernel or a p
 - [ST7796 on Raspberry Pi 5 forum thread](https://forums.raspberrypi.com/viewtopic.php?t=379622)
 - [FocalTech FT6336 overlay forum thread](https://forums.raspberrypi.com/viewtopic.php?t=277581)
 
+### Power control and power loss
+
+- [MOD forum: Dwarf on/off switch](https://forum.mod.audio/t/dwarf-on-off-switch/6030) and [power disconnection countermeasure](https://forum.mod.audio/t/power-disconnection-countermeasure-for-mod-dwarf/11523)
+- [Neural DSP Quad Cortex manual](https://neuraldsp.com/manual/quad-cortex) and [Quad Cortex power switch update](https://neuraldsp.com/news/a-power-switch-that-never-breaks-may-2020-quad-cortex-development-update)
+- [HeadRush Pedalboard quickstart guide](https://cdn.inmusicbrands.com/HeadRush/pedalboard/Pedalboard-Quickstart-Guide-v2_1_3.pdf)
+- [Kemper forum: powering down the Profiler](https://www.kemper-amps.com/forum/thread/11201-probably-a-silly-question-power-down-kemper/)
+- [Raspberry Pi whitepaper: Making a more resilient file system](https://pip-assets.raspberrypi.com/categories/685-app-notes-guides-whitepapers/documents/RP-003610-WP-3-Making%20a%20more%20resilient%20file%20system.pdf)
+- [embeddedTS: Filesystem corruption with SD cards](https://docs.embeddedts.com/Filesystem_Corruption_with_SD_cards)
+- [Raspberry Pi documentation: bootloader configuration (`POWER_OFF_ON_HALT`, `PSU_MAX_CURRENT`)](https://www.raspberrypi.com/documentation/computers/raspberry-pi.html)
+- [Analog Devices LTC2955 push-button on/off controller](https://www.analog.com/en/products/ltc2955.html)
+
 ### Audio hardware and external comparisons
 
 - [Pisound documentation](https://blokas.io/pisound/docs/general-specifications/)
@@ -528,5 +580,6 @@ If this misses the gate, an alternative such as a Xenomai/EVL dual-kernel or a p
 | 2026-08-07 | v0.2 — Promoted to authoritative decision record; selected Pi 5 SBC for the final processor; selected a custom 40-pin Guitar-MFX board; made native USB gadget and dedicated bridge co-primary candidates; corrected power, mute, A2 variant, storage, measurement-ownership, and board bring-up rationale. |
 | 2026-10-08 | v0.3 — Added learning goal and usage context; added NAM A2 2026 evidence; recorded the Pi 5 re-evaluation against CM5, Rockchip/Allwinner, i.MX8M Plus, and MCU-only (ADR-005); re-confirmed the ESP32-S3 UI split (ADR-004); amended ADR-007, ADR-009, and ADR-011; added ADR-013 (two ribbon-connected boards), ADR-014 (local UI via bridge daemon), ADR-015 (TDO 5-inch RGB display and ESP32-S3-WROOM-1-N16R8, STM32U5G9 fallback), ADR-016 (global gain calibration), and ADR-017 (outputs, modes, mute, volume). |
 | 2026-10-13 | v0.4 — ADR-017 changed to separate analog Master and Phones potentiometers (encoder for navigation only). ADR-015 re-evaluated on cost against STM32U5G9, ESP32-P4, STM32H7B3, RA8D1, i.MX RT1170, and Allwinner T113-S3; ESP32-S3 retained. |
-| 2026-10-14 | v0.6 — ADR-013 changed to three boards (audio, main, front-panel) after comparison with the two-shield plan, which is recorded as not selected; master-mute gate placed on the audio board with inputs pulled to muted; open decisions updated. |
 | 2026-10-14 | v0.5 — ADR-017 outputs changed to Main out L/MONO + R (6.35 mm) and 3.5 mm headphone out, following common commercial units; dedicated guitar-amplifier output and the three output modes withdrawn; amplifier use via main outputs with the cabinet IR switched off manually; ADR-009 amendment updated. Corrected ADR-005 and ADR-011: Pi 5 `I2S0` and `I2S1` share the same pins and cannot be used at the same time, so there is one usable I2S bus. Added ADR-018: PCM1863 + PCM5122 for rev A, CS4282P as rev B candidate. |
+| 2026-10-14 | v0.6 — ADR-013 changed to three boards (audio, main, front-panel) after comparison with the two-shield plan, which is recorded as not selected; master-mute gate placed on the audio board with inputs pulled to muted; open decisions updated. |
+| 2026-10-14 | v0.7 — Added ADR-019: 12 V DC input, soft power button with orderly shutdown, no Pi 5 hold-up, read-only root, and hardware power-fail mute, with a comparison of MOD Dwarf, Quad Cortex, HeadRush, and Kemper power control. Proposed analog rails of about ±12 V. Changelog rows put back in date order. |

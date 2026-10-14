@@ -25,7 +25,7 @@
 | Guitar amplifier | Feed it from the main outputs with the cabinet IR switched off |
 | Control | 5.0-inch 800×480 IPS touchscreen, push encoder, three footswitches (proposed), external footswitch and expression jacks |
 | Computer | USB-C audio for recording; native Pi 5 gadget or a bridge chip, chosen after the Phase 3 tests |
-| Power | 12 V DC adapter (proposed) |
+| Power | 12 V DC adapter; soft power button with orderly shutdown; pulling the plug mutes the outputs and leaves the system intact |
 
 ## How it works
 

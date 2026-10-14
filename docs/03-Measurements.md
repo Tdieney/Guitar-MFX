@@ -3,7 +3,7 @@
 | Field | Value |
 |---|---|
 | Document status | Empty measurement ledger; no project result has been recorded yet |
-| Revision | 0.3 |
+| Revision | 0.4 |
 | Date | 2026-10-14 |
 | Gate definitions | [02-Architecture.md](02-Architecture.md) §10 and §13 |
 
@@ -21,7 +21,7 @@ This document is the single authoritative home for all Guitar-MFX measured resul
 - Use `PASS`, `FAIL`, `INCOMPLETE`, or `NOT RUN` in **Pass/fail**.
 - Project documents shall link to a row or section here rather than restating project-measured values.
 
-No tables below contain measured data at revision 0.3.
+No tables below contain measured data at revision 0.4.
 
 ## 2. Phase verification gates
 
@@ -109,10 +109,14 @@ No tables below contain measured data at revision 0.3.
 
 ### 3.10 V-POWER — Power and thermal behavior
 
+Gate definition: [01-Hardware.md](01-Hardware.md) §8.2–8.3. Required rows include: input inrush and rail sequencing; current with the unit off; orderly shutdown time and detection of the Pi 5 3.3 V fall; long-press forced off; power-fail detection delay; relay release versus audio-rail collapse (no audible pop); hold-up time versus the display power-off sequence.
+
 | Date | OS/kernel/firmware version | Hardware configuration | Buffer settings | Measured value | Target | Pass/fail | Measured by |
 |---|---|---|---|---|---|---|---|
 
 ### 3.11 V-STORAGE — Boot and power-loss recovery
+
+Required rows include repeated DC-plug pulls with the read-only root while idle, while saving a preset, and while importing a model, each followed by a boot and a preset-integrity check (UR-PWR-005).
 
 | Date | OS/kernel/firmware version | Hardware configuration | Buffer settings | Measured value | Target | Pass/fail | Measured by |
 |---|---|---|---|---|---|---|---|

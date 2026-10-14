@@ -3,7 +3,7 @@
 | Field | Value |
 |---|---|
 | Document status | Proposed hardware architecture; production codec, USB path, storage, power implementation, and board layout are measurement-gated |
-| Revision | 0.6 |
+| Revision | 0.7 |
 | Date | 2026-10-14 |
 | Related requirements | [00-UserRequirement.md](00-UserRequirement.md) |
 
@@ -50,6 +50,7 @@ The product-specific hardware is split into three boards, selected by the user o
 - Protected external footswitch and expression-pedal jacks, with their signals sent to the front-panel board.
 - Routing of the master-mute line from the front-panel board to the audio board, and of the power-state/recovery lines between the Pi 5 and the ESP32-S3.
 - Panel USB-C connector routing for the architecture described in §7.
+- Push-button on/off controller, Pi 5 power load switch, and power-fail detector (§8.3).
 
 **Front-panel board** — control surface, behind the display:
 
@@ -184,6 +185,7 @@ There are no output modes. When the main outputs feed a guitar amplifier, the us
 - Both relays are **muted when unpowered**.
 - The ESP32-S3 drives one **master-mute GPIO directly** (not through the I/O expander). A logic gate on the audio board, beside the relay coil drivers, combines it with per-output enables from the I/O expander, so the safety path does not depend on the expander. The ESP32-S3 releases mute only after the Pi reports stable audio, and re-mutes on lost heartbeat.
 - The gate inputs are pulled to the muted state on the audio board, so an unplugged cable or an unpowered front-panel board leaves the outputs muted (proposed; verified at board bring-up).
+- The main-board power-fail detector is a further input to the gate, so loss of the 12 V input mutes both relays without software (§8.3).
 - Headphone insertion is sensed through the I/O expander; the ESP32-S3 then opens Relay 1 (UR-OUT-008).
 
 ### 5.6 Master volume
@@ -223,7 +225,7 @@ Ground-loop handling: connect the chassis and jack sleeves to ground at **one de
 | Onboard footswitches | Three soft-touch momentary switches | Proposed, not yet a locked user requirement. |
 | External switch input | One protected TRS input supporting a dual momentary footswitch | Required connector; exact wiring and normally-open/closed detection remain to be specified. |
 | Expression input | One protected TRS input with calibration and plug detection | Proposed for the first board; confirm before layout. Needs an ADC1 pin (GPIO1–10). |
-| Power control | Momentary illuminated button | Requests orderly shutdown; not a direct unsupervised cut of Pi 5 power. |
+| Power control | Momentary illuminated button on the front panel, wired to the push-button controller on the main board | Press: power on, or orderly shutdown. Long press: forced off (§8.3). |
 | Service controls | ESP32-S3 reset/boot access and Pi 5 recovery/test access | Required during development; may be internal in the enclosure. |
 
 Footswitch and expression connectors need series protection, ESD protection, debouncing, and controlled ground-current paths. They shall not share sensitive analog return paths with the guitar input.
@@ -267,7 +269,7 @@ On the WROOM-1-N16R8 module, GPIO35–37 are used internally by the octal PSRAM.
 | Encoder A/B | 2 | Recommended |
 | **Total** | **30** | |
 
-Through the I/O expander: display DISP, touch reset, encoder push, footswitches, headphone-insert sense, per-output mute enables, and indicator LEDs.
+Through the I/O expander: display DISP, touch reset, encoder push, footswitches, headphone-insert sense, per-output mute enables, indicator LEDs, and the power signals of §8.3 (Pi 5 power enable, Pi 5 3.3 V sense, power-button interrupt, power-off request, power-fail flag). The power signals therefore add no direct GPIO.
 
 If more pins are needed: try SYNC mode without DE (−1, behaviour of the unused DE pin must be tested), or move the encoder to the expander (−2). Strapping pins GPIO0, 3, 45, and 46 may carry display data because the display inputs do not pull them at reset; **GPIO45 must never be pulled high at boot**, as that selects 1.8 V flash and prevents booting.
 
@@ -353,9 +355,20 @@ All comparison results belong in [03-Measurements.md](03-Measurements.md). Phase
 - For the USB VBUS-isolation experiment, use a current-limited, measured 5.1 V bench supply into the appropriate 5 V/GND header connection and follow the Phase 3 test plan.
 - Keep fan wiring and switching regulators away from the guitar input and measurement cables.
 
-### 8.2 Proposed Guitar-MFX main-board power tree
+### 8.2 Main-board power tree (proposed)
 
-The proposed main input remains a regulated 12 V DC adapter rated around 3 A. Convert it to the Pi rail using an efficient synchronous buck regulator designed for 5.1 V at up to 5 A, with its final rating, transient response, cabling loss, and thermal margin established by measurement.
+The input is a regulated 12 V DC adapter rated about 3 A on a barrel jack (UR-PWR-001, selected 2026-10-14). Estimated loads, not measurements: Pi 5 about 6–12 W running NAM and effects, with the vendor 5 V/5 A rating as the worst case; display and backlight about 1.3 W; ESP32-S3 about 0.5 W; audio board about 1–2 W. A 36 W adapter leaves margin.
+
+```text
+12 V DC jack -> protection --+--> push-button on/off controller (always powered)
+  (fuse/eFuse, reverse       +--> power-fail comparator (input side)
+   polarity, TVS)            +--> ideal diode -> hold-up capacitance -+--> buck 5.1 V / 5 A -> Pi 5 load switch -> 40-pin header 5 V
+                                                                     +--> buck 5 V -> front-panel board: 3.3 V LDO, backlight boost
+                                                                     +--> dual converter, about +/-13 V -> audio board: low-noise LDOs,
+                                                                          about +/-12 V (op-amps) and 3.3 V (codec)
+```
+
+Convert the input to the Pi rail using an efficient synchronous buck regulator designed for 5.1 V at up to 5 A, with its final rating, transient response, cabling loss, and thermal margin established by measurement.
 
 Do **not** use a linear regulator to drop 12 V to the Pi 5 rail. At multi-ampere load it would dissipate excessive heat. Low-noise LDOs may be used after switching conversion for controlled low-current codec, reference, or analog rails.
 
@@ -368,13 +381,26 @@ Because the board powers Pi 5 through the 40-pin header, it bypasses USB-PD nego
 - Separate filtered rails for digital, display/backlight, codec, reference, and sensitive analog loads.
 - A supply sent to the front-panel board, where a local regulator makes the 3.3 V rail shared by the ESP32-S3 and the display VDD (display about 70 mA typical, vendor figure), so the display is never driven while unpowered.
 - Capacity on that supply for the display backlight: a constant-current boost driver on the front-panel board, about 21 V compliance at 40 mA, PWM dimming (about 1 W).
-- A pre-regulated rail sent to the audio board, where local low-noise LDOs make the final codec and analog rails (two-stage regulation).
-- A supervised power latch or load switch.
-- Enough hold-up time for the ESP32-S3 to mute audio and request orderly Linux shutdown, or another measured power-loss strategy.
+- A pre-regulated dual rail (about ±13 V) sent to the audio board, where local low-noise LDOs make about ±12 V for the op-amps and 3.3 V for the codec (two-stage regulation). Rails of this class give headroom for hot active pickups, the full codec output, and 300 Ω headphones; exact voltages are set at schematic design.
+- The push-button controller, Pi 5 load switch, ideal diode, hold-up capacitance, and power-fail comparator of §8.3.
 - Brownout detection, logging, and deterministic recovery.
 - Verified conductor, connector, header-pin, and copper current capacity.
+- Pi 5 bootloader setting `PSU_MAX_CURRENT`, which per vendor documentation skips USB-PD negotiation and assumes the stated supply rating. Header power offers no PD negotiation, so without it the Pi 5 assumes a lower-rated supply and may restrict USB peripheral current.
 
 No power implementation is validated until the board bring-up measurements are recorded in [03-Measurements.md](03-Measurements.md).
+
+### 8.3 Power control and power loss
+
+Selected by the user on 2026-10-14 (UR-PWR-003, UR-PWR-005; [90-DecisionRecord.md](90-DecisionRecord.md) ADR-019). Circuits are proposed and not yet measured.
+
+- **Power on:** a press of the front-panel button makes the push-button controller enable the main-board converters. The ESP32-S3 starts, keeps the outputs muted, runs the display power-on sequence (§6.1), then closes the Pi 5 load switch.
+- **Orderly shutdown:** a second press reaches the ESP32-S3 through the controller's interrupt output. The ESP32-S3 mutes the relays, shows shutdown progress, and sends a shutdown command over UART; the bridge daemon runs a Linux poweroff. With `POWER_OFF_ON_HALT=1`, the Pi 5 PMIC switches all its outputs off at halt (vendor documentation), so the header 3.3 V pin falls. The ESP32-S3 sees this, opens the Pi 5 load switch, runs the display power-off sequence, and asserts the controller's kill input, which turns the unit off. If the Pi 5 does not halt within a timeout set at bring-up, the ESP32-S3 continues anyway.
+- **Forced off:** a long press makes the controller remove power without the ESP32-S3, for a hung ESP32-S3 or Pi 5.
+- **Power loss:** a comparator on the input side of the ideal diode detects loss of the 12 V input. In hardware it mutes both relays through the master-mute gate and opens the Pi 5 load switch, so the hold-up capacitance feeds only the ESP32-S3, the display, and the audio rails. It also flags the ESP32-S3, which turns the backlight off and completes the display power-off sequence on hold-up energy. The capacitance is estimated at several millifarads at 12 V (about 2.5 W for 150 ms); it is sized at schematic design and measured under V-POWER.
+- **No hold-up for the Pi 5:** Linux runs from a read-only root, and presets are written atomically on a separate data partition ([02-Architecture.md](02-Architecture.md) §9).
+- **No back-powering:** the ESP32-S3 does not drive the UART or other lines into the Pi 5 while the Pi's 3.3 V pin is low.
+
+Candidate controller class: LTC2955-type push-button on/off controller (vendor: 1.5–36 V supply, about 1.2 µA quiescent, interrupt output, kill input, optional automatic turn-on); part not selected. Whether the unit turns on by itself when 12 V is applied is open.
 
 ## 9. Cooling, storage, and enclosure
 

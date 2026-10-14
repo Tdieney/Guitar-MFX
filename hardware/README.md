@@ -3,7 +3,7 @@
 | Field | Value |
 |---|---|
 | Document status | Index of board design sources and fabrication outputs |
-| Revision | 0.2 |
+| Revision | 0.3 |
 | Date | 2026-10-14 |
 | Design tool | EasyEDA |
 
@@ -17,7 +17,7 @@ Three product boards, selected 2026-10-14 ([90-DecisionRecord.md](../docs/90-Dec
 |---|---|---|---|
 | Front-panel board | `front-panel/` | ESP32-S3-WROOM-1-N16R8 module, display and touch FPC connectors, backlight driver, local 3.3 V rail, I2C I/O expander, encoder, footswitch and power-button connections | Selected; not started |
 | Audio board | `audio-board/` | Guitar input, PGA, codec, Main out L/MONO + R (6.35 mm) and headphone (3.5 mm) outputs, Master and Phones potentiometers, mute relays and mute gate | Selected; not started; gated by P0-GATE |
-| Main board | `main-board/` | DC input, power tree, Pi 5 power, panel USB-C, external footswitch and expression jacks, signal routing between the boards | Selected; not started; gated by P3-GATE |
+| Main board | `main-board/` | 12 V DC input, power tree, push-button power controller, power-fail detector, Pi 5 power, panel USB-C, external footswitch and expression jacks, signal routing between the boards | Selected; not started; gated by P3-GATE |
 | Display bring-up adapter | `display-adapter/` | Test fixture: plug-on adapter for the 44-pin ESP32-S3 development board that runs the display gate | Planned first PCB; whether front-panel rev A runs the display gate instead is open |
 
 ## Folder layout per board
