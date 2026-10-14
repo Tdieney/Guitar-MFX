@@ -1,0 +1,252 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 50 1200 770" width="1200" height="770" font-family="'Segoe UI', 'Helvetica Neue', Arial, sans-serif" role="img" aria-label="Guitar-MFX concept: floor unit with a 5-inch touchscreen, encoder, Master and Phones knobs, three footswitches, and a rear panel with power, USB-C, control, output, and guitar input jacks">
+  <title>Guitar-MFX concept render</title>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#161a22"/>
+      <stop offset="1" stop-color="#08090c"/>
+    </linearGradient>
+    <radialGradient id="halo" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#2d4c7e" stop-opacity="0.5"/>
+      <stop offset="1" stop-color="#2d4c7e" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="topFace" x1="0" y1="0" x2="0.35" y2="1">
+      <stop offset="0" stop-color="#3d424b"/>
+      <stop offset="1" stop-color="#24272d"/>
+    </linearGradient>
+    <linearGradient id="frontFace" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#2a2e35"/>
+      <stop offset="1" stop-color="#15171b"/>
+    </linearGradient>
+    <linearGradient id="screen" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#101d30"/>
+      <stop offset="1" stop-color="#070d17"/>
+    </linearGradient>
+    <linearGradient id="sheen" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0.07"/>
+      <stop offset="1" stop-color="#ffffff" stop-opacity="0"/>
+    </linearGradient>
+    <radialGradient id="knobCap" cx="0.4" cy="0.35" r="0.7">
+      <stop offset="0" stop-color="#626872"/>
+      <stop offset="0.6" stop-color="#2f3339"/>
+      <stop offset="1" stop-color="#1a1c20"/>
+    </radialGradient>
+    <radialGradient id="dome" cx="0.38" cy="0.32" r="0.75">
+      <stop offset="0" stop-color="#f5f7f9"/>
+      <stop offset="0.45" stop-color="#aab0b8"/>
+      <stop offset="1" stop-color="#4b5057"/>
+    </radialGradient>
+    <linearGradient id="nut" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#959ba3"/>
+      <stop offset="1" stop-color="#3d4249"/>
+    </linearGradient>
+    <linearGradient id="rearFace" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#2d3138"/>
+      <stop offset="1" stop-color="#1a1c21"/>
+    </linearGradient>
+    <filter id="blur20" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="20"/></filter>
+    <filter id="blur6" x="-100%" y="-100%" width="300%" height="300%"><feGaussianBlur stdDeviation="6"/></filter>
+    <filter id="blur3" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="3"/></filter>
+
+    <g id="knob">
+      <circle cy="4" r="35" fill="#000" opacity="0.5" filter="url(#blur3)"/>
+      <circle r="31" fill="#1a1c20" stroke="#4a4f57"/>
+      <circle r="29.5" fill="none" stroke="#5c626b" stroke-width="3" stroke-dasharray="1.5 2.5"/>
+      <circle r="24" fill="url(#knobCap)"/>
+      <line x1="0" y1="-9" x2="0" y2="-22" stroke="#f2f3f5" stroke-width="3" stroke-linecap="round"/>
+    </g>
+    <line id="tick" x1="0" y1="-38" x2="0" y2="-43" stroke="#7d848e" stroke-width="2" stroke-linecap="round"/>
+    <g id="ticks">
+      <use href="#tick" xlink:href="#tick" transform="rotate(-135)"/>
+      <use href="#tick" xlink:href="#tick" transform="rotate(-108)"/>
+      <use href="#tick" xlink:href="#tick" transform="rotate(-81)"/>
+      <use href="#tick" xlink:href="#tick" transform="rotate(-54)"/>
+      <use href="#tick" xlink:href="#tick" transform="rotate(-27)"/>
+      <use href="#tick" xlink:href="#tick"/>
+      <use href="#tick" xlink:href="#tick" transform="rotate(27)"/>
+      <use href="#tick" xlink:href="#tick" transform="rotate(54)"/>
+      <use href="#tick" xlink:href="#tick" transform="rotate(81)"/>
+      <use href="#tick" xlink:href="#tick" transform="rotate(108)"/>
+      <use href="#tick" xlink:href="#tick" transform="rotate(135)"/>
+    </g>
+    <g id="footswitch">
+      <circle cy="5" r="40" fill="#000" opacity="0.55" filter="url(#blur3)"/>
+      <polygon points="36,0 18,31.18 -18,31.18 -36,0 -18,-31.18 18,-31.18" fill="url(#nut)" stroke="#25282d"/>
+      <circle r="27" fill="#2a2d32"/>
+      <circle r="24" fill="url(#dome)"/>
+      <ellipse cx="-7" cy="-9" rx="9" ry="5" fill="#fff" opacity="0.55"/>
+    </g>
+    <g id="jack">
+      <polygon points="19,0 9.5,16.45 -9.5,16.45 -19,0 -9.5,-16.45 9.5,-16.45" fill="url(#nut)" stroke="#25282d"/>
+      <circle r="12.5" fill="#c9ced5" stroke="#6b7078"/>
+      <circle r="7" fill="#050506"/>
+    </g>
+    <g id="jack35">
+      <polygon points="12,0 6,10.39 -6,10.39 -12,0 -6,-10.39 6,-10.39" fill="url(#nut)" stroke="#25282d"/>
+      <circle r="7.5" fill="#c9ced5" stroke="#6b7078"/>
+      <circle r="3.8" fill="#050506"/>
+    </g>
+  </defs>
+
+  <!-- Background -->
+  <rect x="0" y="0" width="1200" height="860" fill="url(#bg)"/>
+  <ellipse cx="600" cy="330" rx="620" ry="330" fill="url(#halo)"/>
+
+  <!-- Enclosure -->
+  <ellipse cx="600" cy="560" rx="500" ry="18" fill="#000" opacity="0.8" filter="url(#blur20)"/>
+  <rect x="110" y="470" width="980" height="80" rx="26" fill="url(#frontFace)"/>
+  <rect x="150" y="548" width="50" height="7" rx="3" fill="#0a0a0c"/>
+  <rect x="1000" y="548" width="50" height="7" rx="3" fill="#0a0a0c"/>
+  <rect x="110" y="90" width="980" height="420" rx="26" fill="url(#topFace)"/>
+  <rect x="110.75" y="90.75" width="978.5" height="418.5" rx="25.5" fill="none" stroke="#ffffff" stroke-opacity="0.09" stroke-width="1.5"/>
+  <path d="M138 91.5 H1062" stroke="#ffffff" stroke-opacity="0.2" stroke-width="1.5"/>
+
+  <!-- Display -->
+  <rect x="150" y="122" width="368" height="226" rx="10" fill="#3d7fe0" opacity="0.35" filter="url(#blur20)"/>
+  <rect x="144" y="116" width="380" height="238" rx="12" fill="#08090b" stroke="#4b515b"/>
+  <rect x="156" y="128" width="356" height="214" rx="3" fill="url(#screen)"/>
+
+  <!-- Screen: top bar -->
+  <rect x="156" y="128" width="356" height="28" rx="3" fill="#0c1626"/>
+  <line x1="156" y1="156" x2="512" y2="156" stroke="#1f2b3e"/>
+  <rect x="164" y="134" width="38" height="16" rx="3" fill="#ffb347"/>
+  <text x="183" y="146" text-anchor="middle" font-size="11" font-weight="700" fill="#1a1206">01A</text>
+  <text x="211" y="147" font-size="14" font-weight="600" fill="#f1f4f8">Clean Room</text>
+  <text x="504" y="146" text-anchor="end" font-size="9.5" fill="#7f8ba0">BANK 1 · 48 kHz</text>
+
+  <!-- Screen: signal chain -->
+  <line x1="160" y1="190" x2="508" y2="190" stroke="#34445d" stroke-width="2"/>
+  <rect x="166" y="175" width="46" height="30" rx="5" fill="#2f6f62"/>
+  <text x="189" y="194" text-anchor="middle" font-size="10" font-weight="700" fill="#fff">GATE</text>
+  <rect x="222" y="175" width="46" height="30" rx="5" fill="#3e5f96"/>
+  <text x="245" y="194" text-anchor="middle" font-size="10" font-weight="700" fill="#fff">COMP</text>
+  <rect x="276" y="173" width="50" height="34" rx="6" fill="#ffb347" opacity="0.35" filter="url(#blur3)"/>
+  <rect x="278" y="175" width="46" height="30" rx="5" fill="#e8902a" stroke="#fff3df" stroke-width="1.5"/>
+  <text x="301" y="194" text-anchor="middle" font-size="10" font-weight="700" fill="#1a1206">NAM</text>
+  <rect x="334" y="175" width="46" height="30" rx="5" fill="#9a4f45"/>
+  <text x="357" y="194" text-anchor="middle" font-size="10" font-weight="700" fill="#fff">CAB</text>
+  <rect x="390" y="175" width="46" height="30" rx="5" fill="#141c2b" stroke="#6d5fae" stroke-dasharray="3 2"/>
+  <text x="413" y="194" text-anchor="middle" font-size="10" font-weight="700" fill="#7d7a9c">DLY</text>
+  <rect x="446" y="175" width="46" height="30" rx="5" fill="#2f7c99"/>
+  <text x="469" y="194" text-anchor="middle" font-size="10" font-weight="700" fill="#fff">REV</text>
+  <path d="M296 213 L301 208 L306 213 Z" fill="#ffb347"/>
+
+  <!-- Screen: block detail -->
+  <text x="166" y="232" font-size="12" font-weight="600" fill="#ffcf8a">NAM A2 · British crunch</text>
+  <text x="504" y="232" text-anchor="end" font-size="9.5" fill="#7f8ba0">IR: 4×12 closed back</text>
+  <rect x="160" y="240" width="348" height="18" rx="3" fill="none" stroke="#ffb347" stroke-opacity="0.65"/>
+  <text x="166" y="253" font-size="9.5" fill="#c9d1dd">INPUT</text>
+  <rect x="226" y="247" width="220" height="4" rx="2" fill="#1e2a3d"/>
+  <rect x="226" y="247" width="150" height="4" rx="2" fill="#ffb347"/>
+  <text x="504" y="253" text-anchor="end" font-size="9.5" fill="#e3e8f0">+2.0 dB</text>
+  <text x="166" y="275" font-size="9.5" fill="#9aa6b8">OUTPUT</text>
+  <rect x="226" y="269" width="220" height="4" rx="2" fill="#1e2a3d"/>
+  <rect x="226" y="269" width="110" height="4" rx="2" fill="#4da3ff"/>
+  <text x="504" y="275" text-anchor="end" font-size="9.5" fill="#d8dee8">−3.5 dB</text>
+  <text x="166" y="297" font-size="9.5" fill="#9aa6b8">TONE</text>
+  <rect x="226" y="291" width="220" height="4" rx="2" fill="#1e2a3d"/>
+  <rect x="226" y="291" width="128" height="4" rx="2" fill="#4da3ff"/>
+  <text x="504" y="297" text-anchor="end" font-size="9.5" fill="#d8dee8">5.8</text>
+
+  <!-- Screen: footswitch assignments -->
+  <rect x="156" y="318" width="356" height="24" fill="#0c1626"/>
+  <line x1="156" y1="318" x2="512" y2="318" stroke="#1f2b3e"/>
+  <line x1="275" y1="322" x2="275" y2="338" stroke="#1f2b3e"/>
+  <line x1="394" y1="322" x2="394" y2="338" stroke="#1f2b3e"/>
+  <circle cx="170" cy="330" r="3.5" fill="#ffb347"/>
+  <text x="180" y="334" font-size="10" fill="#cfd6e2">A · DRIVE</text>
+  <circle cx="289" cy="330" r="3.5" fill="#59d38c"/>
+  <text x="299" y="334" font-size="10" fill="#cfd6e2">B · DELAY</text>
+  <circle cx="408" cy="330" r="3.5" fill="#3a3030"/>
+  <text x="418" y="334" font-size="10" fill="#8792a3">C · TAP</text>
+  <path d="M156 128 H390 L300 342 H156 Z" fill="url(#sheen)"/>
+
+  <!-- Logo -->
+  <text x="572" y="152" font-size="26" font-weight="700" letter-spacing="5" fill="#e7eaef">GUITAR-MFX</text>
+  <text x="574" y="174" font-size="10" letter-spacing="3.2" fill="#8b929d">NEURAL AMP · MULTI-EFFECTS</text>
+
+  <!-- Power button -->
+  <circle cx="1046" cy="140" r="16" fill="#ffb347" opacity="0.4" filter="url(#blur6)"/>
+  <circle cx="1046" cy="140" r="13" fill="#1b1d21" stroke="#ffb347" stroke-width="2.5"/>
+  <path d="M1041.4 136.1 A6 6 0 1 0 1050.6 136.1 M1046 133 V139" fill="none" stroke="#ffb347" stroke-width="1.8" stroke-linecap="round"/>
+  <text x="1046" y="172" text-anchor="middle" font-size="8.5" letter-spacing="1.5" fill="#8b929d">POWER</text>
+
+  <!-- Encoder, Master, Phones -->
+  <use href="#knob" xlink:href="#knob" transform="translate(640 262) scale(1.35) rotate(-20)"/>
+  <text x="640" y="330" text-anchor="middle" font-size="10" letter-spacing="2" fill="#aeb5bf">SELECT · PUSH</text>
+  <use href="#ticks" xlink:href="#ticks" transform="translate(800 262)"/>
+  <use href="#knob" xlink:href="#knob" transform="translate(800 262) rotate(60)"/>
+  <text x="800" y="330" text-anchor="middle" font-size="10" letter-spacing="2" fill="#aeb5bf">MASTER</text>
+  <use href="#ticks" xlink:href="#ticks" transform="translate(950 262)"/>
+  <use href="#knob" xlink:href="#knob" transform="translate(950 262) rotate(-30)"/>
+  <text x="950" y="330" text-anchor="middle" font-size="10" letter-spacing="2" fill="#aeb5bf">PHONES</text>
+
+  <!-- Groove -->
+  <line x1="144" y1="378" x2="1056" y2="378" stroke="#000" stroke-opacity="0.55" stroke-width="1.5"/>
+  <line x1="144" y1="379.5" x2="1056" y2="379.5" stroke="#fff" stroke-opacity="0.07"/>
+
+  <!-- Footswitches -->
+  <circle cx="300" cy="398" r="10" fill="#ffb347" opacity="0.7" filter="url(#blur6)"/>
+  <circle cx="300" cy="398" r="4.5" fill="#ffd8a0"/>
+  <use href="#footswitch" xlink:href="#footswitch" transform="translate(300 450)"/>
+  <text x="300" y="503" text-anchor="middle" font-size="11" font-weight="700" letter-spacing="1" fill="#8b929d">A</text>
+  <circle cx="600" cy="398" r="10" fill="#59d38c" opacity="0.7" filter="url(#blur6)"/>
+  <circle cx="600" cy="398" r="4.5" fill="#a8f3c6"/>
+  <use href="#footswitch" xlink:href="#footswitch" transform="translate(600 450)"/>
+  <text x="600" y="503" text-anchor="middle" font-size="11" font-weight="700" letter-spacing="1" fill="#8b929d">B</text>
+  <circle cx="900" cy="398" r="4.5" fill="#3a3030" stroke="#000" stroke-opacity="0.6"/>
+  <use href="#footswitch" xlink:href="#footswitch" transform="translate(900 450)"/>
+  <text x="900" y="503" text-anchor="middle" font-size="11" font-weight="700" letter-spacing="1" fill="#8b929d">C</text>
+
+  <!-- Front edge seam -->
+  <line x1="136" y1="511" x2="1064" y2="511" stroke="#000" stroke-opacity="0.5"/>
+
+  <!-- Rear panel -->
+  <text x="110" y="612" font-size="11" letter-spacing="3" fill="#8b929d">REAR PANEL</text>
+  <rect x="110" y="624" width="980" height="128" rx="14" fill="url(#rearFace)" stroke="#3c4149"/>
+  <path d="M124 625 H1076" stroke="#ffffff" stroke-opacity="0.12"/>
+
+  <g font-size="9" letter-spacing="2" fill="#7d848e" text-anchor="middle">
+    <text x="227.5" y="644">POWER · USB</text>
+    <text x="447.5" y="644">CONTROL</text>
+    <text x="715" y="644">OUTPUTS</text>
+    <text x="1000" y="644">INPUT</text>
+  </g>
+  <g stroke="#4d535c" stroke-width="1.2">
+    <line x1="150" y1="652" x2="305" y2="652"/>
+    <line x1="370" y1="652" x2="525" y2="652"/>
+    <line x1="590" y1="652" x2="840" y2="652"/>
+    <line x1="965" y1="652" x2="1035" y2="652"/>
+  </g>
+
+  <!-- DC 12 V -->
+  <circle cx="180" cy="686" r="15" fill="#0d0e10" stroke="#6b7078" stroke-width="2"/>
+  <circle cx="180" cy="686" r="4.5" fill="#c9ced5"/>
+  <!-- USB-C -->
+  <rect x="248" y="673" width="54" height="26" rx="6" fill="#23262b" stroke="#3c4149"/>
+  <rect x="255" y="679" width="40" height="14" rx="7" fill="#0d0e10" stroke="#9aa0a8" stroke-width="2"/>
+  <rect x="264" y="684" width="22" height="4" rx="2" fill="#4a4f57"/>
+  <!-- Control jacks -->
+  <use href="#jack" xlink:href="#jack" transform="translate(400 686)"/>
+  <use href="#jack" xlink:href="#jack" transform="translate(495 686)"/>
+  <!-- Outputs -->
+  <use href="#jack35" xlink:href="#jack35" transform="translate(620 686)"/>
+  <use href="#jack" xlink:href="#jack" transform="translate(715 686)"/>
+  <use href="#jack" xlink:href="#jack" transform="translate(810 686)"/>
+  <!-- Guitar input -->
+  <circle cx="1000" cy="686" r="24" fill="none" stroke="#ffb347" stroke-opacity="0.55" stroke-width="1.5"/>
+  <use href="#jack" xlink:href="#jack" transform="translate(1000 686)"/>
+
+  <g font-size="10" letter-spacing="1" fill="#c3c8d0" text-anchor="middle">
+    <text x="180" y="730">DC 12 V</text>
+    <text x="275" y="730">USB-C</text>
+    <text x="400" y="730">EXP</text>
+    <text x="495" y="730">EXT FS</text>
+    <text x="620" y="730">PHONES</text>
+    <text x="715" y="730">MAIN R</text>
+    <text x="810" y="730">MAIN L/MONO</text>
+    <text x="1000" y="730">GUITAR IN</text>
+  </g>
+
+  <!-- Caption -->
+  <text x="600" y="796" text-anchor="middle" font-size="12" fill="#6f7682">Concept render, not a final design. Controls and connectors follow docs/01-Hardware.md as of 2026-10-14.</text>
+</svg>
