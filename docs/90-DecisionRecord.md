@@ -2,8 +2,8 @@
 
 | Field | Value |
 |---|---|
-| Version | 0.8 |
-| Date | 2026-10-14 |
+| Version | 0.9 |
+| Date | 2026-10-15 |
 | Status | Pre-hardware; project measurements have not yet been recorded |
 | Purpose | Authoritative rationale and evidence behind decisions kept in the numbered project documents |
 
@@ -449,6 +449,28 @@ The audio and main boards connect to the Pi 5 40-pin header by ribbon and sit be
 
 **Status:** Selected by the user 2026-10-14; not yet measured.
 
+---
+
+### ADR-021 — Performance controls, MIDI, and automatic turn-on
+
+**Decision (user, 2026-10-15):**
+
+- Three onboard footswitches, as on the HX Stomp, plus one external footswitch jack (dual momentary). Functions are assigned in software.
+- One expression-pedal input.
+- MIDI only over USB, as a function of the native gadget; no physical MIDI port in v1.
+- The unit turns on by itself when 12 V is applied; the soft power button still turns it off and on. A jumper to disable automatic turn-on is considered for a later revision.
+
+**Rationale:**
+
+- Footswitches go through the I/O expander, so their count sets the enclosure length rather than the ESP32-S3 pin budget. Three cover previous/next preset plus one assignable switch; the external jack adds two more.
+- The expression input uses the ADC1 pin already counted in the 30-of-31 GPIO budget; it costs one jack and its protection.
+- USB MIDI lets a DAW control the unit with no extra hardware. A physical MIDI port would need an opto-isolator, jacks, and wiring for a use the owner, playing alone at home, does not have yet.
+- Automatic turn-on suits starting a whole pedalboard from one switched power strip, and the LTC2955-class controller provides it.
+
+**Alternatives considered:** two or four footswitches; no expression input or two inputs (two would use all 31 GPIOs); a DIN or TRS MIDI port on a Pi 5 UART; no MIDI; always press the button to turn on (Quad Cortex style); a jumper-selectable turn-on in v1.
+
+**Status:** Selected by the user 2026-10-15; circuits not yet designed.
+
 ## 4. External latency context
 
 These figures are not Guitar-MFX measurements. They illustrate why both numerical and perceptual comparisons matter.
@@ -510,7 +532,7 @@ If this misses the gate, an alternative such as a Xenomai/EVL dual-kernel or a p
 - Whether the ESP32-S3 passes the display gate at DCLK ≥ 23 MHz, or the STM32U5G9 fallback is needed.
 - Physical interconnect between the three boards and the Pi 5 header: which cable carries which signals, connector types, and pinouts.
 - Whether the display gate runs on the bring-up adapter before front-panel rev A is drawn, or on front-panel rev A directly.
-- Whether the unit turns on by itself when 12 V is applied (useful with a pedalboard power strip).
+- Jumper to disable automatic turn-on (later revision).
 - Push-button controller part, hold-up capacitance, and shutdown timeout (sized at schematic design, measured under V-POWER).
 - Final analog rail voltages (about ±12 V proposed).
 - Whether the native gadget passes P3-GATE or the bridge fallback is needed.
@@ -518,7 +540,7 @@ If this misses the gate, an alternative such as a Xenomai/EVL dual-kernel or a p
 - Host operating systems and recording applications to support.
 - Exact panel USB-C CC/VBUS isolation implementation, if native gadget wins.
 - Final microSD or NVMe boot/storage medium.
-- Onboard footswitch count, expression input, and MIDI requirements.
+- Default footswitch functions (software; changeable).
 - Whether the optional deterministic latency reference is needed before the Phase 1 owner judgement.
 - Whether an alternative real-time OS approach or hybrid architecture is justified by failed measurements.
 
@@ -622,3 +644,4 @@ If this misses the gate, an alternative such as a Xenomai/EVL dual-kernel or a p
 | 2026-10-14 | v0.6 — ADR-013 changed to three boards (audio, main, front-panel) after comparison with the two-shield plan, which is recorded as not selected; master-mute gate placed on the audio board with inputs pulled to muted; open decisions updated. |
 | 2026-10-14 | v0.7 — Added ADR-019: 12 V DC input, soft power button with orderly shutdown, no Pi 5 hold-up, read-only root, and hardware power-fail mute, with a comparison of MOD Dwarf, Quad Cortex, HeadRush, and Kemper power control. Proposed analog rails of about ±12 V. Changelog rows put back in date order. |
 | 2026-10-14 | v0.8 — Added ADR-020: native USB gadget first with a bridge fallback and a reserved lane-1 connector; three USB channels to the computer (processed L/R, dry) and two from it; re-amping through the unit deferred. Amended ADR-011. Recorded the Pi 5 I2S lane mapping. |
+| 2026-10-15 | v0.9 — Added ADR-021: three onboard footswitches, one external footswitch jack, one expression input, USB MIDI only, and automatic turn-on when 12 V is applied. |

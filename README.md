@@ -23,9 +23,9 @@
 | Outputs | Main out L/MONO and R (6.35 mm, line level) with an analog Master knob; 3.5 mm headphones with their own Phones knob |
 | Safety | Relays keep every output muted until audio is stable, and during shutdown |
 | Guitar amplifier | Feed it from the main outputs with the cabinet IR switched off |
-| Control | 5.0-inch 800×480 IPS touchscreen, push encoder, three footswitches (proposed), external footswitch and expression jacks |
+| Control | 5.0-inch 800×480 IPS touchscreen, push encoder, three footswitches, external footswitch and expression jacks, USB MIDI |
 | Computer | USB-C audio: processed stereo plus a dry guitar track to the computer, stereo playback from it; native Pi 5 USB gadget first, bridge chip as fallback |
-| Power | 12 V DC adapter; soft power button with orderly shutdown; pulling the plug mutes the outputs and leaves the system intact |
+| Power | 12 V DC adapter; turns on when power is applied; soft power button with orderly shutdown; pulling the plug mutes the outputs and leaves the system intact |
 
 ## How it works
 

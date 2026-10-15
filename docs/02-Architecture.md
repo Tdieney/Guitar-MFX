@@ -1,7 +1,7 @@
 # Guitar-MFX System Architecture
 
-**Revision:** 0.8  
-**Date:** 2026-10-14  
+**Revision:** 0.9  
+**Date:** 2026-10-15  
 **Status:** Proposed architecture; measured validation is recorded in [03-Measurements.md](03-Measurements.md)
 
 Related documents:
@@ -132,6 +132,7 @@ The target computer-facing interface is a class-compliant USB Audio Class 2 devi
 - Two playback channels from the computer to the MFX.
 - Three capture channels from the MFX to the computer: processed L/R and the dry guitar signal (after the calibrated PGA, before any processing). Confirmed by the user on 2026-10-14 (UR-CON-007).
 - 24-bit, 48 kHz initial format.
+- A USB MIDI function in the same gadget, so a DAW can change presets and parameters (UR-UI-010). If the bridge fallback is used, the bridge must provide it instead.
 - Class-compliant operation without a project-specific host driver where the host OS supports UAC2; behavior must be tested on the intended Windows release and DAW.
 
 Initial routing is:
@@ -235,15 +236,17 @@ Commands must be acknowledged or rejected with a reason. Parameters must be iden
 
 ### 5.3 Physical controls
 
-Touch is suitable for setup and editing, but live performance needs controls that can be used without precise visual attention. The initial proposal includes:
+Touch is suitable for setup and editing, but live performance needs controls that can be used without precise visual attention. Selected by the user on 2026-10-15 (UR-UI-007, UR-UI-010):
 
-- At least three external or panel-mounted footswitch functions: previous preset, next preset, and assignable/tuner.
+- Three onboard footswitches and one external footswitch jack (dual momentary). Functions are assigned in software; a starting set is previous preset, next preset, and assignable/tuner.
+- One expression-pedal input, read by the ESP32-S3 ADC.
+- MIDI only over USB; no physical MIDI port in v1.
 - One rotary encoder with push action for navigation and parameter editing.
 - Two analog potentiometers on the audio board: **Master** (both main outputs) and **Phones** (headphones). They are in the signal path and work without software ([01-Hardware.md](01-Hardware.md) §5.6).
 - The Pi 5 is the only I2C master of the codec; the ESP32-S3 never writes to the codec.
 - A power control and accessible recovery/reset control.
 
-External footswitch connectors require ESD protection, filtering, and a clearly documented wiring standard. An expression-pedal input can be added after its connector type and resistance convention are selected.
+External footswitch and expression connectors require ESD protection, filtering, and a clearly documented wiring standard; the expression connector type and resistance convention are selected at schematic design.
 
 ## 6. Boot, Mute, Fault, and Shutdown Behavior
 
@@ -251,7 +254,8 @@ The output must default to muted in hardware. The safe-state sequence is:
 
 ```text
 OFF: only the push-button controller is powered
-  -> UI_BOOT: button press; ESP32-S3 starts; output remains muted; Pi 5 still unpowered
+  -> UI_BOOT: 12 V applied (automatic turn-on) or button press; ESP32-S3 starts;
+     output remains muted; Pi 5 still unpowered
   -> LINUX_BOOT: ESP32-S3 closes the Pi 5 load switch; UI shows progress; heartbeat awaited
   -> AUDIO_STARTING: codec and graph initialize; levels ramp from silence
   -> READY: output mute releases only after stable audio is confirmed
@@ -452,6 +456,8 @@ Consider an MCU audio front end only if the measured and owner-evaluated Pi 5 sy
 | VBUS-isolated Pi 5 native-gadget cable/interposer | **Proposed, bench proof required** | May free Pi 5 USB-C for data while header-powered, but CC/VBUS role behavior and protection are unresolved |
 | Dedicated class-compliant USB audio bridge | Fallback, selected by user 2026-10-14; built only if the native path fails P3-GATE; spare connector reserved | Single clock domain on the Pi, but adds a hard-to-solder chip, firmware, and a multi-lane overlay |
 | USB channels: 3 to the computer (processed L/R, dry), 2 from it; re-amping through the unit deferred | Selected by user 2026-10-14 | Dry track can be re-processed on the computer with the NAM plugin; re-amping needs only software later |
+| Three onboard footswitches, one external footswitch jack, one expression input, USB MIDI only | Selected by user 2026-10-15 | Enough for a home player; footswitches go through the I/O expander; MIDI costs no hardware |
+| Automatic turn-on when 12 V is applied | Selected by user 2026-10-15 | Starts with a pedalboard power strip; disable jumper deferred |
 | microSD versus NVMe final storage | Open, measurement required | Pi 5 has no eMMC; reliability and complexity trade-offs are unresolved |
 | Hybrid MCU audio processing | Deferred, not accepted | Adds clocking, routing, firmware, and preset synchronization complexity |
 

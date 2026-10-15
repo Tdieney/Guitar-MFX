@@ -3,8 +3,8 @@
 | Field | Value |
 |---|---|
 | Document status | Proposed hardware architecture; production codec, USB path, storage, power implementation, and board layout are measurement-gated |
-| Revision | 0.8 |
-| Date | 2026-10-14 |
+| Revision | 0.9 |
+| Date | 2026-10-15 |
 | Related requirements | [00-UserRequirement.md](00-UserRequirement.md) |
 
 ## 1. Recommended hardware strategy
@@ -222,9 +222,10 @@ Ground-loop handling: connect the chassis and jack sleeves to ground at **one de
 | Encoder | One detented rotary encoder with push switch | Navigation and parameter editing (UR-UI-007). A/B on direct GPIO, push via expander. |
 | Master volume | Dual-gang log analog potentiometer on the audio board | Both main outputs; works without software (§5.6). |
 | Phones volume | Dual-gang log analog potentiometer on the audio board | Headphone output; independent of master (§5.2, §5.6). |
-| Onboard footswitches | Three soft-touch momentary switches | Proposed, not yet a locked user requirement. |
+| Onboard footswitches | Three soft-touch momentary switches | Selected 2026-10-15 (UR-UI-007); functions assigned in software. |
 | External switch input | One protected TRS input supporting a dual momentary footswitch | Required connector; exact wiring and normally-open/closed detection remain to be specified. |
-| Expression input | One protected TRS input with calibration and plug detection | Proposed for the first board; confirm before layout. Needs an ADC1 pin (GPIO1–10). |
+| Expression input | One protected TRS input with calibration and plug detection | Selected 2026-10-15 (UR-UI-007). Uses the ADC1 pin already counted in §6.2 (GPIO1–10). |
+| MIDI | USB MIDI through the native gadget; no physical MIDI port | Selected 2026-10-15 (UR-UI-010); software only. |
 | Power control | Momentary illuminated button on the front panel, wired to the push-button controller on the main board | Press: power on, or orderly shutdown. Long press: forced off (§8.3). |
 | Service controls | ESP32-S3 reset/boot access and Pi 5 recovery/test access | Required during development; may be internal in the enclosure. |
 
@@ -405,7 +406,7 @@ Selected by the user on 2026-10-14 (UR-PWR-003, UR-PWR-005; [90-DecisionRecord.m
 - **No hold-up for the Pi 5:** Linux runs from a read-only root, and presets are written atomically on a separate data partition ([02-Architecture.md](02-Architecture.md) §9).
 - **No back-powering:** the ESP32-S3 does not drive the UART or other lines into the Pi 5 while the Pi's 3.3 V pin is low.
 
-Candidate controller class: LTC2955-type push-button on/off controller (vendor: 1.5–36 V supply, about 1.2 µA quiescent, interrupt output, kill input, optional automatic turn-on); part not selected. Whether the unit turns on by itself when 12 V is applied is open.
+Candidate controller class: LTC2955-type push-button on/off controller (vendor: 1.5–36 V supply, about 1.2 µA quiescent, interrupt output, kill input, optional automatic turn-on); part not selected. The unit turns on by itself when 12 V is applied (UR-PWR-006, selected 2026-10-15), using the controller's automatic turn-on; a jumper to disable it is considered for a later revision.
 
 ## 9. Cooling, storage, and enclosure
 

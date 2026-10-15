@@ -3,8 +3,8 @@
 | Field | Value |
 |---|---|
 | Document status | Baseline requirements |
-| Revision | 0.7 |
-| Date | 2026-10-14 |
+| Revision | 0.8 |
+| Date | 2026-10-15 |
 | Project type | Personal DIY electric-guitar multi-effects processor; learning and research project |
 | Primary user | Beginner to multi-effects processors and to audio electronics; experienced with PCB design, soldering, and 3D design |
 
@@ -76,7 +76,8 @@ The outputs the user will actually use are headphones, powered PC speakers, a co
 | UR-UI-004 | Display the active preset, effect chain, amp/cab selection, tuner, input/output levels, bypass state, USB state, and system status. | Must |
 | UR-UI-005 | Provide physical controls where touch alone would be unsafe or inconvenient, including power/shutdown and master volume. | Must |
 | UR-UI-006 | Provide a connector for external foot control. | Must |
-| UR-UI-007 | One rotary encoder with push action, for navigation and parameter editing, is confirmed. Onboard footswitches and an expression-pedal input are desirable, but their quantities are not yet user-approved. | Should |
+| UR-UI-007 | One rotary encoder with push action for navigation and parameter editing; three onboard footswitches; one external footswitch jack (dual momentary); one expression-pedal input. Footswitch functions are assigned in software. Counts confirmed by the user on 2026-10-15. | Must |
+| UR-UI-010 | MIDI only over USB in v1, as a MIDI function of the USB gadget; no physical MIDI port. Confirmed by the user on 2026-10-15. | Must |
 | UR-UI-008 | A reset or service control may be included when required for recovery or firmware development. | Should |
 | UR-UI-009 | The local screen alone shall be sufficient for playing: choosing presets, enabling, disabling and reordering effects, editing parameters, tuning, viewing input/output levels, switching the cabinet IR off for a guitar amplifier, and viewing USB and system status. Deep setup — Wi-Fi configuration, plugin installation, NAM model and IR file management, and audio-device configuration — may remain in the PiPedal web interface as a maintenance path. | Must |
 
@@ -103,6 +104,7 @@ USB channel map for v1 (confirmed 2026-10-14): three channels to the computer (p
 | UR-PWR-002 | Permit a USB data connection to a computer without back-powering either the Pi 5 or the host. | Must |
 | UR-PWR-003 | Turn the unit on and off with a soft power button, as on the Quad Cortex: one press starts the unit; another press runs an orderly shutdown (mute, Linux shutdown, then power off). Confirmed by the user on 2026-10-14. | Must |
 | UR-PWR-004 | Battery operation is not currently required. | Not required |
+| UR-PWR-006 | The unit turns on by itself when 12 V is applied, so a pedalboard power strip can start it; the soft power button still turns it off and on. A jumper to disable automatic turn-on is considered for a later revision. Confirmed by the user on 2026-10-15. | Must |
 | UR-PWR-005 | Pulling the DC plug while the unit runs must not damage the unit, corrupt the system or saved presets, or cause a loud pop; changes not yet saved may be lost. No hold-up supply is provided to finish a Linux shutdown after power loss. Confirmed by the user on 2026-10-14. | Must |
 | UR-MEC-001 | The enclosure may be large enough for the Pi 5 SBC, the Guitar-MFX boards placed beside it, cooling, foot controls, robust connectors, and service access. | Must |
 | UR-MEC-002 | Design and fabricate three custom Guitar-MFX boards — an audio board and a main board connected to the Raspberry Pi 5 40-pin header by ribbon cable, and a front-panel board behind the display — replacing the commercial audio HAT in the final product. The boards are not constrained to the HAT form factor. Board count confirmed by the user on 2026-10-14. | Must |
@@ -155,9 +157,9 @@ The following questions must be resolved before the Guitar-MFX boards and enclos
 1. *Closed 2026-10-08:* the ST7796 module is no longer used; the purchased TDO display uses a parallel RGB interface (UR-UI-002).
 2. *Closed 2026-10-14:* the main outputs are 6.35 mm jacks at line level; the powered PC speakers connect through an adapter cable (UR-OUT-001).
 3. Which computer operating systems and recording applications must be supported?
-4. How many onboard footswitches are wanted in addition to the external footswitch connector?
-5. Is an expression-pedal input required in the first hardware revision?
-6. Are DIN MIDI input and output required, or is USB MIDI sufficient?
+4. *Closed 2026-10-15:* three onboard footswitches plus the external footswitch jack (UR-UI-007).
+5. *Closed 2026-10-15:* one expression-pedal input in the first hardware revision (UR-UI-007).
+6. *Closed 2026-10-15:* USB MIDI only; no physical MIDI port in v1 (UR-UI-010).
 7. *Closed 2026-10-14:* USB sends processed stereo plus a dry guitar channel; re-amping through the unit is deferred (UR-CON-007, UR-CON-008).
 8. What maximum acceptable boot-to-audio time should be used after the Linux prototype is measured?
 9. Should the final boot medium remain a high-endurance microSD card or use NVMe through the Pi 5 PCIe FFC connection after boot-time and reliability testing?
