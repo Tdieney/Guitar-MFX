@@ -24,7 +24,7 @@
 | Safety | Relays keep every output muted until audio is stable, and during shutdown |
 | Guitar amplifier | Feed it from the main outputs with the cabinet IR switched off |
 | Control | 5.0-inch 800×480 IPS touchscreen, push encoder, three footswitches (proposed), external footswitch and expression jacks |
-| Computer | USB-C audio for recording; native Pi 5 gadget or a bridge chip, chosen after the Phase 3 tests |
+| Computer | USB-C audio: processed stereo plus a dry guitar track to the computer, stereo playback from it; native Pi 5 USB gadget first, bridge chip as fallback |
 | Power | 12 V DC adapter; soft power button with orderly shutdown; pulling the plug mutes the outputs and leaves the system intact |
 
 ## How it works

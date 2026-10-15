@@ -3,7 +3,7 @@
 | Field | Value |
 |---|---|
 | Document status | Empty measurement ledger; no project result has been recorded yet |
-| Revision | 0.4 |
+| Revision | 0.5 |
 | Date | 2026-10-14 |
 | Gate definitions | [02-Architecture.md](02-Architecture.md) §10 and §13 |
 
@@ -21,7 +21,7 @@ This document is the single authoritative home for all Guitar-MFX measured resul
 - Use `PASS`, `FAIL`, `INCOMPLETE`, or `NOT RUN` in **Pass/fail**.
 - Project documents shall link to a row or section here rather than restating project-measured values.
 
-No tables below contain measured data at revision 0.4.
+No tables below contain measured data at revision 0.5.
 
 ## 2. Phase verification gates
 
@@ -180,10 +180,14 @@ Record separate rows for separate criteria, configurations, buffer settings, or 
 
 ### 5.1 Native Pi 5 UAC2 gadget candidate
 
+Developed first ([02-Architecture.md](02-Architecture.md) §4.4). Required rows include: enumeration with isolated VBUS; four-hour duplex run with three channels to the host and two from it while the NAM A2-Full chain runs, with the xrun count on the local playing path; clock drift and feedback behavior; reconnect after host sleep, cable removal, and MFX reboot; CPU load of the routing service.
+
 | Date | OS/kernel/firmware version | Hardware configuration | Buffer settings | Measured value | Target | Pass/fail | Measured by |
 |---|---|---|---|---|---|---|---|
 
 ### 5.2 Dedicated class-compliant USB audio bridge candidate
+
+Fallback; measured only if §5.1 fails P3-GATE.
 
 | Date | OS/kernel/firmware version | Hardware configuration | Buffer settings | Measured value | Target | Pass/fail | Measured by |
 |---|---|---|---|---|---|---|---|

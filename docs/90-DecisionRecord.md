@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| Version | 0.7 |
+| Version | 0.8 |
 | Date | 2026-10-14 |
 | Status | Pre-hardware; project measurements have not yet been recorded |
 | Purpose | Authoritative rationale and evidence behind decisions kept in the numbered project documents |
@@ -220,7 +220,7 @@ Note: Elk Audio OS officially supports Pi 4 / CM4 for its low-latency drivers bu
 
 ---
 
-### ADR-011 — Native gadget and dedicated USB bridge are co-primary candidates
+### ADR-011 — Native gadget and dedicated USB bridge are co-primary candidates (amended by ADR-020)
 
 **Decision:** Evaluate native Pi 5 UAC2 gadget mode and a dedicated class-compliant USB audio bridge before selecting the board architecture.
 
@@ -241,7 +241,7 @@ Sources: [Raspberry Pi OTG whitepaper](https://pip-assets.raspberrypi.com/catego
 
 **2026-10 evidence:** a community lab write-up documents Pi 5 enumerating as a UAC2 gadget ([RASPIAUDIO CamillaDSP notes](https://github.com/RASPIAUDIO/CamillaDSP/blob/main/docs/usb_audio_gadget_pi5.md)); this supports the software path, not the VBUS-isolated panel arrangement. Raspberry Pi's I2S whitepaper states that `I2S0` (clock producer) and `I2S1` (clock consumer) on Pi 5 each have up to four data lanes, but they occupy the same GPIO pins and Pi 5 cannot act as both at the same time (p. 8). **Correction 2026-10-14:** an earlier version of this record said a bridge could use a second I2S bus; that was wrong. A bridge must share the codec's BCLK/LRCK on an extra data lane (single clock domain) or use another link; feasibility depends on the bridge chip and is unverified.
 
-**Status:** Both candidates are proposed; the VBUS-isolation approach requires bench proof.
+**Status:** Amended 2026-10-14 by ADR-020: native gadget first, bridge as fallback. The VBUS-isolation approach still requires bench proof.
 
 ---
 
@@ -421,6 +421,34 @@ The audio and main boards connect to the Pi 5 40-pin header by ribbon and sit be
 
 **Status:** Selected by the user 2026-10-14; not yet designed or measured.
 
+---
+
+### ADR-020 — USB audio: native gadget first, bridge fallback; dry channel to the computer
+
+**Decision:**
+
+- Develop the native Pi 5 UAC2 gadget first. Keep a dedicated USB audio bridge as the fallback, built only if the native path fails P3-GATE. Reserve a spare connector carrying I2S lane 1 (GPIO22/23), BCLK, LRCK, and the codec MCLK so a bridge daughterboard needs no audio-board respin.
+- USB channels for v1: three to the computer (processed L/R and the dry guitar signal after the calibrated PGA) and two from the computer, 24-bit, 48 kHz.
+- Re-amping through the unit is deferred beyond v1.
+
+**Rationale:**
+
+- **Audio board unchanged:** the tone-critical board stays simple and hand-solderable, with no USB controller near the analog section.
+- **Testable without a PCB:** the native path needs only the Pi 5 and a hand-made cable, so Phase 3 decides with measurements before the main board is drawn.
+- **Little hardware:** header power (ADR-019) already frees the Pi 5 USB-C port, one reason for the three-board plan (ADR-013).
+- **Learning goal:** USB gadget, ALSA, and clock-domain work are core embedded-Linux topics.
+- **Why not the bridge first:** an XMOS-class controller is a fine-pitch QFN, needs its own firmware toolchain and a development kit, and its risks appear only after hardware is built. Raspberry Pi's I2S whitepaper shows four-lane use only with the Pi as clock producer (HiFiBerry DAC8x); multi-lane operation with the Pi as clock consumer is not yet shown by a product.
+- **Dry channel:** common on mid-range and budget units — [HX Stomp](https://line6.com/support/topic/65525-hx-stomp-reamp-question) (dry on USB 7), [Boss GX-100](https://support.roland.com/hc/en-us/articles/4508370106651-GX-100-Applying-GX-100-effects-to-DAW-playback-audio-and-recording-as-a-new-track), [Boss GX-10](https://support.roland.com/hc/en-us/articles/30332301042843-GX-10-Applying-Effects-to-Dry-Sound-after-Recording-Re-amping), [Valeton GP-200](https://www.fullcompass.com/prod/644365-valeton-gp-200-gp-200-multi-effects-processor-black) (6-in/4-out USB). With the native path it costs only software.
+- **Re-amping deferred:** the user observed that a dry track can be turned into a finished track on the computer; the free [NAM plugin](https://github.com/sdatkinson/NeuralAmpModelerPlugin) runs the same model files there. Re-amping through the unit needs input switching in the effect chain and is not needed for v1.
+
+**Fallback trigger:** the native path fails P3-GATE — device role cannot be held reliably with isolated VBUS, or the four-hour duplex run causes xruns on the local playing path with NAM A2-Full.
+
+**Alternatives considered:** bridge first; deferring USB audio to v2 (would lower UR-CON-002 from Must); processed stereo only; dry channel plus re-amping in the first milestone.
+
+**Consequences:** the routing service is the main software risk and must stay below the audio threads in priority; a spare connector and a few series resistors are added; open question 7 closes and question 10 narrows to "does the native path pass".
+
+**Status:** Selected by the user 2026-10-14; not yet measured.
+
 ## 4. External latency context
 
 These figures are not Guitar-MFX measurements. They illustrate why both numerical and perceptual comparisons matter.
@@ -478,14 +506,16 @@ If this misses the gate, an alternative such as a Xenomai/EVL dual-kernel or a p
 
 - Headphone model and impedance (stage designed for up to 300 Ω meanwhile).
 - Confirmation of the rev A codec (ADR-018) by Phase 0 measurements, and whether CS4282P is evaluated for rev B.
-- How a USB bridge, if used, would share Pi 5's single I2S bus.
+- If the bridge fallback is activated: bridge chip (must be an I2S clock consumer on the codec MCLK), daughterboard design, and the Pi 5 multi-lane consumer overlay.
 - Whether the ESP32-S3 passes the display gate at DCLK ≥ 23 MHz, or the STM32U5G9 fallback is needed.
 - Physical interconnect between the three boards and the Pi 5 header: which cable carries which signals, connector types, and pinouts.
 - Whether the display gate runs on the bring-up adapter before front-panel rev A is drawn, or on front-panel rev A directly.
 - Whether the unit turns on by itself when 12 V is applied (useful with a pedalboard power strip).
 - Push-button controller part, hold-up capacitance, and shutdown timeout (sized at schematic design, measured under V-POWER).
 - Final analog rail voltages (about ±12 V proposed).
-- Native Pi 5 gadget or dedicated USB audio bridge after Phase 3.
+- Whether the native gadget passes P3-GATE or the bridge fallback is needed.
+- Which board carries the bridge-fallback connector (decided with the board interconnect).
+- Host operating systems and recording applications to support.
 - Exact panel USB-C CC/VBUS isolation implementation, if native gadget wins.
 - Final microSD or NVMe boot/storage medium.
 - Onboard footswitch count, expression input, and MIDI requirements.
@@ -564,6 +594,14 @@ If this misses the gate, an alternative such as a Xenomai/EVL dual-kernel or a p
 - [Raspberry Pi documentation: bootloader configuration (`POWER_OFF_ON_HALT`, `PSU_MAX_CURRENT`)](https://www.raspberrypi.com/documentation/computers/raspberry-pi.html)
 - [Analog Devices LTC2955 push-button on/off controller](https://www.analog.com/en/products/ltc2955.html)
 
+### USB recording comparisons
+
+- [Line 6 forum: HX Stomp re-amp channels](https://line6.com/support/topic/65525-hx-stomp-reamp-question)
+- [Roland support: GX-100 effects on DAW playback (DRY channel)](https://support.roland.com/hc/en-us/articles/4508370106651-GX-100-Applying-GX-100-effects-to-DAW-playback-audio-and-recording-as-a-new-track)
+- [Roland support: GX-10 re-amping](https://support.roland.com/hc/en-us/articles/30332301042843-GX-10-Applying-Effects-to-Dry-Sound-after-Recording-Re-amping)
+- [Valeton GP-200 product listing (6-in/4-out USB)](https://www.fullcompass.com/prod/644365-valeton-gp-200-gp-200-multi-effects-processor-black)
+- [Neural Amp Modeler plugin](https://github.com/sdatkinson/NeuralAmpModelerPlugin)
+
 ### Audio hardware and external comparisons
 
 - [Pisound documentation](https://blokas.io/pisound/docs/general-specifications/)
@@ -583,3 +621,4 @@ If this misses the gate, an alternative such as a Xenomai/EVL dual-kernel or a p
 | 2026-10-14 | v0.5 — ADR-017 outputs changed to Main out L/MONO + R (6.35 mm) and 3.5 mm headphone out, following common commercial units; dedicated guitar-amplifier output and the three output modes withdrawn; amplifier use via main outputs with the cabinet IR switched off manually; ADR-009 amendment updated. Corrected ADR-005 and ADR-011: Pi 5 `I2S0` and `I2S1` share the same pins and cannot be used at the same time, so there is one usable I2S bus. Added ADR-018: PCM1863 + PCM5122 for rev A, CS4282P as rev B candidate. |
 | 2026-10-14 | v0.6 — ADR-013 changed to three boards (audio, main, front-panel) after comparison with the two-shield plan, which is recorded as not selected; master-mute gate placed on the audio board with inputs pulled to muted; open decisions updated. |
 | 2026-10-14 | v0.7 — Added ADR-019: 12 V DC input, soft power button with orderly shutdown, no Pi 5 hold-up, read-only root, and hardware power-fail mute, with a comparison of MOD Dwarf, Quad Cortex, HeadRush, and Kemper power control. Proposed analog rails of about ±12 V. Changelog rows put back in date order. |
+| 2026-10-14 | v0.8 — Added ADR-020: native USB gadget first with a bridge fallback and a reserved lane-1 connector; three USB channels to the computer (processed L/R, dry) and two from it; re-amping through the unit deferred. Amended ADR-011. Recorded the Pi 5 I2S lane mapping. |

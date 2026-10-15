@@ -3,7 +3,7 @@
 | Field | Value |
 |---|---|
 | Document status | Baseline requirements |
-| Revision | 0.6 |
+| Revision | 0.7 |
 | Date | 2026-10-14 |
 | Project type | Personal DIY electric-guitar multi-effects processor; learning and research project |
 | Primary user | Beginner to multi-effects processors and to audio electronics; experienced with PCB design, soldering, and 3D design |
@@ -88,10 +88,12 @@ The outputs the user will actually use are headphones, powered PC speakers, a co
 | UR-CON-002 | Appear to the computer as a bidirectional USB audio device. | Must |
 | UR-CON-003 | Send the processed guitar signal to recording software without a separate external recorder. | Must |
 | UR-CON-004 | Accept stereo computer playback and route it to the MFX headphone and powered-speaker outputs. | Must |
+| UR-CON-007 | Send the dry guitar signal (after the calibrated PGA, before any processing) to the computer as a separate USB channel, so a recording can be re-processed later, for example with the NAM plugin on the computer. Confirmed by the user on 2026-10-14. | Must |
+| UR-CON-008 | Re-amping through the unit (computer playback of a dry track into the effect-chain input) is deferred beyond v1; it needs no hardware change and may be added in software later. | Deferred |
 | UR-CON-005 | Support loading and managing neural models, cabinet IRs, effects, and presets. | Must |
 | UR-CON-006 | Wireless connectivity may be used for model downloads, updates, remote editing, and maintenance. | Should |
 
-The required USB channel map, bit depth, host operating systems, dry/re-amp channel support, and simultaneous local/USB routing remain to be specified. Native Pi 5 USB gadget audio and a dedicated class-compliant USB audio bridge are co-primary candidates until Phase 3 measurements select between them.
+USB channel map for v1 (confirmed 2026-10-14): three channels to the computer (processed L/R and dry guitar) and two from the computer, 24-bit, 48 kHz. Host operating systems and recording applications remain open (§6, question 3). The native Pi 5 USB gadget is developed first; a dedicated USB audio bridge is the fallback if the native path fails its Phase 3 gate ([01-Hardware.md](01-Hardware.md) §7.3).
 
 ### 3.5 Power and mechanical requirements
 
@@ -156,10 +158,10 @@ The following questions must be resolved before the Guitar-MFX boards and enclos
 4. How many onboard footswitches are wanted in addition to the external footswitch connector?
 5. Is an expression-pedal input required in the first hardware revision?
 6. Are DIN MIDI input and output required, or is USB MIDI sufficient?
-7. Should USB recording expose processed stereo only, or processed stereo plus a dry guitar channel for later re-amping?
+7. *Closed 2026-10-14:* USB sends processed stereo plus a dry guitar channel; re-amping through the unit is deferred (UR-CON-007, UR-CON-008).
 8. What maximum acceptable boot-to-audio time should be used after the Linux prototype is measured?
 9. Should the final boot medium remain a high-endurance microSD card or use NVMe through the Pi 5 PCIe FFC connection after boot-time and reliability testing?
-10. Will native Pi 5 UAC2 gadget mode or a dedicated USB audio bridge best satisfy the USB requirement after the Phase 3 comparison?
+10. Does the native Pi 5 UAC2 gadget, developed first, pass its Phase 3 gate, or is the dedicated USB audio bridge fallback needed?
 11. Which headphones will be used, and what is their impedance? The headphone stage is designed for up to 300 Ω until this is answered.
 12. *Closed 2026-10-14:* there is no dedicated amplifier output, so no true-bypass path; all outputs default to silent (UR-OUT-006).
 

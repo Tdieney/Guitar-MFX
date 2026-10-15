@@ -3,7 +3,7 @@
 | Field | Value |
 |---|---|
 | Document status | Proposed hardware architecture; production codec, USB path, storage, power implementation, and board layout are measurement-gated |
-| Revision | 0.7 |
+| Revision | 0.8 |
 | Date | 2026-10-14 |
 | Related requirements | [00-UserRequirement.md](00-UserRequirement.md) |
 
@@ -15,7 +15,7 @@ The intended progression is:
 
 1. **Development unit:** Raspberry Pi 5 + HiFiBerry DAC2 ADC Pro (reference for the rev A codec pair, §11.1) + prototype guitar input buffer.
 2. **Optional comparison:** Pisound v1.2 as a second reference path; results in [03-Measurements.md](03-Measurements.md).
-3. **System validation:** prove neural models, effects, latency, noise, gain calibration, UI communication, power behavior, storage behavior, and both proposed USB-audio architectures.
+3. **System validation:** prove neural models, effects, latency, noise, gain calibration, UI communication, power behavior, storage behavior, and the native USB-audio path (the bridge fallback only if it fails).
 4. **Final unit:** the same Raspberry Pi 5 SBC plus the custom Guitar-MFX boards using a production codec and supporting circuits selected from comparative measurements.
 
 The Raspberry Pi 5 and the three-board set are user-selected project-scope decisions. They do not validate the production codec, header-powered supply, native USB gadget path, dedicated USB bridge, latency, thermal behavior, or mixed-signal PCB performance. Those remain release gates. The Pi 5 decision was re-examined against Compute Module 5, Rockchip/Allwinner modules, NXP i.MX8M Plus, and an MCU-only design in 2026-10 and retained; see [90-DecisionRecord.md](90-DecisionRecord.md) ADR-005.
@@ -326,9 +326,9 @@ This approach is **Proposed, bench proof required**. It shall not be included in
 
 The Pi 5 is powered through its header during this experiment. Raspberry Pi's OTG whitepaper describes header power as the way to free the USB-C port for gadget use, while Raspberry Pi's **vendor power documentation** notes that header power bypasses USB-PD negotiation. The Guitar-MFX design must therefore provide and measure inrush limiting, rail sequencing, input protection, bulk capacitance, current capability, and brownout behavior rather than assuming that the Pi 5 USB-C power path still protects the system. See the [Raspberry Pi USB Power Delivery whitepaper](https://pip-assets.raspberrypi.com/categories/685/app-notes-guides-whitepapers/documents/RP-009856-WP-1-USB%20Power%20delivery%20on%20Raspberry%20Pi%205.pdf).
 
-### 7.3 Co-primary USB audio candidates
+### 7.3 Native gadget first, bridge as fallback
 
-Do not select a winner before Phase 3. Evaluate these as co-primary architectures:
+Selected by the user on 2026-10-14 ([90-DecisionRecord.md](90-DecisionRecord.md) ADR-020): the native Pi 5 UAC2 gadget is developed first. A dedicated USB audio bridge is the fallback and is built only if the native path fails its Phase 3 gate. The criteria below remain the basis for that comparison:
 
 | Criterion | Native Pi 5 UAC2 gadget | Dedicated class-compliant USB audio bridge |
 |---|---|---|
@@ -338,13 +338,18 @@ Do not select a winner before Phase 3. Evaluate these as co-primary architecture
 | Host-driver behavior | Test class-compliant enumeration, duplex streaming, sleep/reconnect, and the intended Windows DAW. | Perform the same host matrix and document any firmware/driver dependency. |
 | Development risk | Includes CC/VBUS role behavior, gadget configuration, clock-domain handling, and Linux routing. | Includes controller firmware/tooling, digital-link integration, added clock domains, availability, and board complexity. |
 
-All comparison results belong in [03-Measurements.md](03-Measurements.md). Phase 3 selects the architecture only after the documented tests; until then, both remain proposed.
+All results belong in [03-Measurements.md](03-Measurements.md). Neither path is validated until its gate passes.
 
 ### 7.4 Evidence gathered since revision 0.2
 
 - **Native gadget:** a community lab write-up documents a Pi 5 enumerating as a UAC2 sound card to a host computer ([RASPIAUDIO CamillaDSP notes](https://github.com/RASPIAUDIO/CamillaDSP/blob/main/docs/usb_audio_gadget_pi5.md)). This is **community evidence** that the software path exists on Pi 5; the panel/power arrangement in §7.2 is still unproven.
 - **Digital interfaces for a bridge (corrected 2026-10-14):** according to Raspberry Pi's **vendor I2S whitepaper**, Pi 5 has two I2S instances, `I2S0` (Pi is clock producer) and `I2S1` (Pi is clock consumer), each with up to four bidirectional data lanes, but **they occupy the same GPIO pins (18–27) and Pi 5 cannot act as both at the same time** (whitepaper p. 8). There is therefore **one usable I2S bus**, with one BCLK/LRCK pair. An earlier revision of this document wrongly stated that a bridge could use a second, separate I2S bus. See [Using the I2S peripherals on Raspberry Pi SBCs](https://pip-assets.raspberrypi.com/categories/1259-audio-camera-and-display/documents/RP-009699-WP-1-Using%20the%20I2S%20peripherals%20on%20Raspberry%20Pi%20SBCs.pdf).
-- **Consequence:** with the codec as clock master (Pi on `I2S1`), a dedicated USB bridge would have to run as a clock consumer on the same BCLK/LRCK and use an extra data lane (GPIO22/23), i.e. a single audio clock domain with asynchronous rate handling on the USB side; otherwise it needs a different link. Whether a given bridge chip supports this is unverified and must be checked before the audio-board schematic is frozen.
+- **Lane mapping (vendor whitepaper, pp. 7–8):** each of the four lanes is one input pin plus one output pin — lane 0 GPIO20/21, lane 1 GPIO22/23, lane 2 GPIO24/25, lane 3 GPIO26/27; BCLK is GPIO18 and LRCK GPIO19. The codec uses lane 0, leaving lanes 1–3 free. The whitepaper names the HiFiBerry DAC8x as the product using all four lanes, with the Pi as clock producer; multi-lane operation with the Pi as clock consumer, as here, is not yet shown by a product.
+- **Consequence:** with the codec as clock master (Pi on `I2S1`), a dedicated USB bridge would have to run as a clock consumer on the same BCLK/LRCK and use lane 1 (GPIO22/23), i.e. a single audio clock domain with asynchronous rate handling on the USB side; otherwise it needs a different link. Whether a given bridge chip supports this is unverified.
+
+### 7.5 Bridge-fallback provision
+
+So that the fallback needs no audio-board respin, bring lane 1 (GPIO22 in, GPIO23 out), BCLK (GPIO18), LRCK (GPIO19), and the codec MCLK to a spare connector, with source-end series resistors and the connector left unpopulated. A bridge daughterboard (for example an XMOS-class USB audio controller acting as I2S clock consumer on the codec MCLK) would plug in there, away from the analog section. Which board carries the connector is decided with the board interconnect. Lanes 2–3 stay unused.
 
 ## 8. Power hardware
 

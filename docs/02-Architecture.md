@@ -1,6 +1,6 @@
 # Guitar-MFX System Architecture
 
-**Revision:** 0.7  
+**Revision:** 0.8  
 **Date:** 2026-10-14  
 **Status:** Proposed architecture; measured validation is recorded in [03-Measurements.md](03-Measurements.md)
 
@@ -43,7 +43,7 @@ Audio board: codec/DAC -> master pot -> line driver --[relay]--> Main out L/MONO
                   +-> phones pot -> HP amp --[relay]--> headphones (3.5 mm)
 ```
 
-The USB candidate in this diagram may be native Pi 5 UAC2 gadget mode or a dedicated class-compliant USB audio bridge. Neither has been selected or validated for Guitar-MFX.
+The USB path in this diagram is the native Pi 5 UAC2 gadget, developed first, with a dedicated USB audio bridge as the fallback (§4.4). Neither is validated for Guitar-MFX.
 
 ## 2. Responsibility Boundaries
 
@@ -57,7 +57,7 @@ The USB candidate in this diagram may be native Pi 5 UAC2 gadget mode or a dedic
 | PiPedal ↔ UI translation | Bridge daemon on Pi 5 | Talks to PiPedal over its websocket API and to the ESP32-S3 over UART; flattens PiPedal state into what the UI draws; applies the cabinet, output-level, and mono settings |
 | User interface | ESP32-S3 | Draw the complete local UI, read touch/encoder/footswitches/expression, send user actions, and show cached state |
 | Safety control | ESP32-S3 plus audio-board relays | Keep outputs muted during boot/fault/shutdown and supervise Linux heartbeat and power state |
-| Computer connection | Pi 5 native OTG path or dedicated bridge | Provide full-duplex, class-compliant USB audio after Phase 3 selects and validates an architecture |
+| Computer connection | Pi 5 native OTG path first; dedicated bridge as fallback | Provide full-duplex, class-compliant USB audio once P3-GATE validates the path |
 | Measurement record | Documentation process | Store every project-measured result in [03-Measurements.md](03-Measurements.md), including failures |
 
 Linux is the source of truth for the active preset and DSP parameter values. The ESP32-S3 keeps a display cache, but it must resynchronize after reconnection rather than assuming that cached state is current.
@@ -130,7 +130,7 @@ The Pi 5 architecture therefore uses A2-Full as its baseline. A2-Lite is not a l
 The target computer-facing interface is a class-compliant USB Audio Class 2 device:
 
 - Two playback channels from the computer to the MFX.
-- Two capture channels from the MFX to the computer.
+- Three capture channels from the MFX to the computer: processed L/R and the dry guitar signal (after the calibrated PGA, before any processing). Confirmed by the user on 2026-10-14 (UR-CON-007).
 - 24-bit, 48 kHz initial format.
 - Class-compliant operation without a project-specific host driver where the host OS supports UAC2; behavior must be tested on the intended Windows release and DAW.
 
@@ -139,9 +139,10 @@ Initial routing is:
 ```text
 Computer playback L/R -> MFX USB receive -> monitor mixer -> local outputs
 Processed MFX L/R     -> MFX USB transmit -> computer recording input
+Dry guitar            -> MFX USB transmit -> computer recording input
 ```
 
-An optional dry guitar recording/re-amp route is desirable, but it is not part of the first two-channel USB milestone. Adding it may require a four-channel capture interface or a selectable processed/dry recording mode.
+The dry track can be re-processed on the computer with the NAM plugin and the same model and IR files. Re-amping through the unit, where computer playback replaces the guitar input of the effect chain, is deferred beyond v1 (UR-CON-008); it needs no hardware change.
 
 ### 4.2 Proposed native Pi 5 physical path — not solved
 
@@ -169,16 +170,16 @@ Header power bypasses Pi 5 USB-PD negotiation and must not be assumed to retain 
 
 The codec audio clock and host USB transfer timing are separate timing domains. The native design should first evaluate a stable audio master clock with asynchronous USB feedback or controlled rate matching. Sample-rate conversion is a fallback if long-duration measurements show unavoidable drift, underruns, or overruns; it is not assumed to be mandatory.
 
-Linux can expose UAC2 through ConfigFS and the `usb_f_uac2` gadget function. A Guitar-MFX routing service would connect USB streams to the local audio graph and expose routing state to PiPedal and the ESP32-S3. Linux UAC2 framework availability does not prove this application's full-duplex behavior.
+Linux can expose UAC2 through ConfigFS and the `usb_f_uac2` gadget function, including an asynchronous mode with feedback (`c_sync=async`, `fb_max`). A Guitar-MFX routing service would connect USB streams to the local audio graph and expose routing state to PiPedal and the ESP32-S3. PiPedal opens one ALSA device, so the gadget card has to be bridged into the graph without disturbing the real-time path: the service runs below the audio threads' priority, preferably on a separate core, and uses feedback so that the host follows the codec clock before any resampling is considered. Linux UAC2 framework availability does not prove this application's full-duplex behavior.
 
-### 4.4 Co-primary architecture comparison
+### 4.4 Native first, bridge fallback
 
-Phase 3 compares:
+Selected by the user on 2026-10-14 ([90-DecisionRecord.md](90-DecisionRecord.md) ADR-020). The native path is developed first; the bridge is activated only if the native path fails P3-GATE, and a spare connector keeps that possible without an audio-board respin ([01-Hardware.md](01-Hardware.md) §7.5). The two paths are:
 
 1. **Native Pi 5 UAC2 gadget:** uses the Pi 5 USB-C OTG data path and Linux gadget framework.
 2. **Dedicated class-compliant USB audio bridge:** adds a controller on a Guitar-MFX board and a digital-audio link to Pi 5. Pi 5 has only one usable I2S bus at a time (`I2S0` and `I2S1` share the same pins), so the bridge must share the codec's clocks on an extra data lane or use another link ([01-Hardware.md](01-Hardware.md) §7.4).
 
-The comparison must document bill-of-materials cost, measured added latency, availability of a compatible Pi 5 digital interface alongside the selected codec, host-driver behavior, clocking/rate-matching needs, firmware/tool dependencies, component availability, and development risk. Neither architecture is a fallback or winner at this revision. Phase 3 records both in [03-Measurements.md](03-Measurements.md) and makes the decision before main-board layout.
+If the fallback is activated, a comparison documents bill-of-materials cost, measured added latency, Pi 5 lane availability alongside the codec, host-driver behavior, clocking/rate-matching needs, firmware/tool dependencies, component availability, and development risk, recorded in [03-Measurements.md](03-Measurements.md) before the bridge daughterboard is designed.
 
 USB validation for either candidate covers:
 
@@ -383,7 +384,7 @@ Build the display bring-up adapter ([01-Hardware.md](01-Hardware.md) §6.4) and 
 
 ### Phase 3 — USB and header-power proof on Raspberry Pi 5
 
-Use the same Pi 5 from Phase 0. First build a hand-made USB-C cable/interposer and current-limited header-power setup. Test the VBUS-isolated native gadget proposal before any main-board layout. In parallel, evaluate a suitable dedicated USB audio bridge architecture or development hardware using the comparison in §4.4.
+Use the same Pi 5 from Phase 0. First build a hand-made USB-C cable/interposer and current-limited header-power setup. Test the VBUS-isolated native gadget proposal before any main-board layout. Evaluate a dedicated USB audio bridge only if the native path fails this gate (§4.4).
 
 **P3-GATE:** Before layout, demonstrate and record:
 
@@ -392,9 +393,9 @@ Use the same Pi 5 from Phase 0. First build a hand-made USB-C cable/interposer a
 - Valid CC/VBUS-presence behavior, including whether a legacy-OTG-style cable is required.
 - No back-feed to Pi 5 or host across off, boot, disconnect, and fault states.
 - Measured header-power inrush, sequencing, rail droop/ripple, current, protection response, and brownout behavior.
-- Four-hour full-duplex native UAC2 playback/recording with clock-drift and reconnect results, if the native path reaches that stage.
-- Equivalent host, latency, digital-interface, and stability evidence for the dedicated bridge candidate.
-- A documented native-versus-bridge comparison covering BOM, added latency, available Pi interfaces, host behavior, and development risk.
+- Four-hour full-duplex native UAC2 run (three channels to the host, two from it) with clock-drift and reconnect results, and no xruns on the local playing path while the approved NAM A2-Full chain runs.
+- CPU load of the USB routing service.
+- If the native path fails: equivalent host, latency, digital-interface, and stability evidence for the bridge fallback, and the comparison in §4.4.
 
 If neither candidate passes, board layout remains blocked and the failure is recorded rather than reclassified as validated.
 
@@ -449,7 +450,8 @@ Consider an MCU audio front end only if the measured and owner-evaluated Pi 5 sy
 | Calibrated 1 MOhm or higher input | Existing design requirement; not yet measured | Necessary for passive pickups and repeatable model drive level |
 | Normally-muted output safety | Existing design requirement; not yet measured | More useful than raw true bypass with powered speakers/headphones |
 | VBUS-isolated Pi 5 native-gadget cable/interposer | **Proposed, bench proof required** | May free Pi 5 USB-C for data while header-powered, but CC/VBUS role behavior and protection are unresolved |
-| Dedicated class-compliant USB audio bridge | Co-primary candidate; comparison required | May reduce native-gadget integration risk but adds hardware, interfaces, clocks, and latency |
+| Dedicated class-compliant USB audio bridge | Fallback, selected by user 2026-10-14; built only if the native path fails P3-GATE; spare connector reserved | Single clock domain on the Pi, but adds a hard-to-solder chip, firmware, and a multi-lane overlay |
+| USB channels: 3 to the computer (processed L/R, dry), 2 from it; re-amping through the unit deferred | Selected by user 2026-10-14 | Dry track can be re-processed on the computer with the NAM plugin; re-amping needs only software later |
 | microSD versus NVMe final storage | Open, measurement required | Pi 5 has no eMMC; reliability and complexity trade-offs are unresolved |
 | Hybrid MCU audio processing | Deferred, not accepted | Adds clocking, routing, firmware, and preset synchronization complexity |
 
@@ -461,7 +463,8 @@ Consider an MCU audio front end only if the measured and owner-evaluated Pi 5 sy
 | PREEMPT_RT cannot meet the gate | Linux architecture may need deeper change | Investigate an alternative such as a Xenomai/EVL dual-kernel or purpose-built low-latency Yocto/Elk-style stack; Pi 5 support, PiPedal compatibility, maintenance state, and benefit are unproven and must be evaluated before adoption |
 | VBUS isolation prevents USB-C device-role detection | Native gadget path cannot enumerate reliably | Hand-made cable/interposer test before layout; record CC and VBUS-presence behavior; evaluate legacy-OTG-style cable arrangement |
 | Header power has unsafe inrush, droop, or brownout behavior | Boot failure, corruption, or hardware stress | Current-limited bench proof; board-level inrush limiting, sequencing, protection, bulk capacitance, monitoring, and repeated fault tests |
-| Native USB gadget clock/routing instability | Recording glitches or drift | Four-hour duplex tests; asynchronous feedback/rate matching; compare dedicated bridge before selection |
+| Native USB gadget clock/routing instability | Recording glitches or drift | Four-hour duplex tests; asynchronous feedback/rate matching; activate the bridge fallback if the gate fails |
+| USB routing service disturbs the real-time path | Xruns or lost CPU headroom for NAM | Lower priority than the audio threads, separate core, feedback instead of resampling, four-hour duplex test with NAM A2-Full; bridge fallback |
 | Dedicated bridge conflicts with codec interfaces or adds latency | Board cannot support both local and USB audio goals | Confirm digital interface allocation and measure end-to-end latency before schematic freeze |
 | Guitar input impedance or level is wrong | Dull tone or incorrect capture response | High-Z buffer, switchable/calibrated gain, scope and analyzer tests |
 | Touch/UI load interferes with audio | Clicks or xruns | Separate ESP32-S3 UI, bounded status rates, and no audio over UART |
